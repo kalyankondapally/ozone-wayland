@@ -1,0 +1,113 @@
+From 85f7bf4868827abddfd21f28d9f939ba5f4cfe8d Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Mon, 28 Oct 2013 03:34:32 +0200
+Subject: [PATCH 04/11] 0007-ChromeOs-Patch-7-xinput-hierarchy
+
+---
+ .../xinput_hierarchy_changed_event_listener.cc     |   13 +++++++++++--
+ .../xinput_hierarchy_changed_event_listener.h      |    4 ++--
+ ...xinput_hierarchy_changed_event_listener_aura.cc |    2 ++
+ 3 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.cc b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.cc
+index fd4d51e..db753d9 100644
+--- a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.cc
++++ b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.cc
+@@ -4,20 +4,25 @@
+ 
+ #include "chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h"
+ 
++#if defined(USE_X11)
+ #include <X11/Xlib.h>
+ #include <X11/extensions/XInput2.h>
++#endif
+ 
+ #include "chromeos/ime/input_method_manager.h"
++#if defined(USE_X11)
+ #include "chromeos/ime/xkeyboard.h"
+ #include "ui/base/x/x11_util.h"
++#endif
+ 
+ namespace chromeos {
+ namespace {
+ 
+ // Gets the major opcode for XInput2. Returns -1 on error.
+ int GetXInputOpCode() {
+-  static const char kExtensionName[] = "XInputExtension";
+   int xi_opcode = -1;
++#if defined(USE_X11)
++  static const char kExtensionName[] = "XInputExtension";
+   int event;
+   int error;
+ 
+@@ -26,9 +31,11 @@ int GetXInputOpCode() {
+     VLOG(1) << "X Input extension not available: error=" << error;
+     return -1;
+   }
++#endif
+   return xi_opcode;
+ }
+ 
++#if defined(USE_X11)
+ // Checks the |event| and asynchronously sets the XKB layout when necessary.
+ void HandleHierarchyChangedEvent(
+     XIHierarchyEvent* event,
+@@ -61,6 +68,7 @@ void HandleHierarchyChangedEvent(
+     xkeyboard->ReapplyCurrentKeyboardLayout();
+   }
+ }
++#endif
+ 
+ }  // namespace
+ 
+@@ -98,7 +106,7 @@ void XInputHierarchyChangedEventListener::RemoveObserver(
+     DeviceHierarchyObserver* observer) {
+   observer_list_.RemoveObserver(observer);
+ }
+-
++#if defined(USE_X11)
+ bool XInputHierarchyChangedEventListener::ProcessedXEvent(XEvent* xevent) {
+   if ((xevent->xcookie.type != GenericEvent) ||
+       (xevent->xcookie.extension != xiopcode_)) {
+@@ -126,6 +134,7 @@ bool XInputHierarchyChangedEventListener::ProcessedXEvent(XEvent* xevent) {
+ 
+   return handled;
+ }
++#endif
+ 
+ void XInputHierarchyChangedEventListener::NotifyDeviceHierarchyChanged() {
+   FOR_EACH_OBSERVER(DeviceHierarchyObserver,
+diff --git a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h
+index 1937c5e..8ddd6a1 100644
+--- a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h
++++ b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h
+@@ -43,10 +43,10 @@ class XInputHierarchyChangedEventListener
+   virtual base::EventStatus WillProcessEvent(
+       const base::NativeEvent& event) OVERRIDE;
+   virtual void DidProcessEvent(const base::NativeEvent& event) OVERRIDE;
+-
++#if defined(USE_X11)
+   // Returns true if the event was processed, false otherwise.
+   virtual bool ProcessedXEvent(XEvent* xevent);
+-
++#endif
+   // Notify observers that a device has been added/removed.
+   void NotifyDeviceHierarchyChanged();
+ 
+diff --git a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener_aura.cc b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener_aura.cc
+index 3d2c2da..8f252cc 100644
+--- a/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener_aura.cc
++++ b/chrome/browser/chromeos/xinput_hierarchy_changed_event_listener_aura.cc
+@@ -19,7 +19,9 @@ base::EventStatus XInputHierarchyChangedEventListener::WillProcessEvent(
+   // There may be multiple listeners for the XI_HierarchyChanged event. So
+   // always return EVENT_CONTINUE to make sure all the listeners receive the
+   // event.
++#if defined(USE_X11)
+   ProcessedXEvent(event);
++#endif
+   return base::EVENT_CONTINUE;
+ }
+ 
+-- 
+1.7.9.5
+

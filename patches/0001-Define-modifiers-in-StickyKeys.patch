@@ -1,0 +1,28 @@
+From fd8df28f00d1c033b76dae55cc2d41e58b24d370 Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Sun, 10 Nov 2013 21:30:47 +0200
+Subject: [PATCH 01/11] Define modifiers in StickyKeys.
+
+---
+ ash/wm/sticky_keys.cc |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/ash/wm/sticky_keys.cc b/ash/wm/sticky_keys.cc
+index 99a0eac..11d6b3d 100644
+--- a/ash/wm/sticky_keys.cc
++++ b/ash/wm/sticky_keys.cc
+@@ -15,6 +15,11 @@
+ #include "ui/events/event.h"
+ #include "ui/events/keycodes/keyboard_code_conversion.h"
+ 
++#define ShiftMask (1<<0)
++#define ControlMask (1<<2)
++#define Mod1Mask (1<<3)
++#define Mod2Mask (1<<4)
++
+ namespace ash {
+ 
+ namespace {
+-- 
+1.7.9.5
+

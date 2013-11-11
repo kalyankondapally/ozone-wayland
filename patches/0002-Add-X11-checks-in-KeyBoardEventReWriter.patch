@@ -1,0 +1,38 @@
+From 54f220ea40e9e66027dd9d893714b49921e1121d Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Sun, 10 Nov 2013 21:33:01 +0200
+Subject: [PATCH 02/11] Add X11 checks in KeyBoardEventReWriter
+
+---
+ .../chromeos/keyboard_driven_event_rewriter.cc     |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/chrome/browser/chromeos/keyboard_driven_event_rewriter.cc b/chrome/browser/chromeos/keyboard_driven_event_rewriter.cc
+index fff7b00..bc40795 100644
+--- a/chrome/browser/chromeos/keyboard_driven_event_rewriter.cc
++++ b/chrome/browser/chromeos/keyboard_driven_event_rewriter.cc
+@@ -4,7 +4,9 @@
+ 
+ #include "chrome/browser/chromeos/keyboard_driven_event_rewriter.h"
+ 
++#if defined(USE_X11)
+ #include <X11/Xlib.h>
++#endif
+ 
+ #include "chrome/browser/chromeos/login/user_manager.h"
+ #include "chrome/browser/chromeos/system/input_device_settings.h"
+@@ -58,9 +60,11 @@ bool KeyboardDrivenEventRewriter::RewriteEvent(ui::KeyEvent* event) {
+     return false;
+   }
+ 
++#if defined(USE_X11)
+   XEvent* xev = event->native_event();
+   XKeyEvent* xkey = &(xev->xkey);
+   xkey->state &= ~(ControlMask | Mod1Mask | ShiftMask);
++#endif
+   event->set_flags(event->flags() & ~kModifierMask);
+   event->NormalizeFlags();
+   return true;
+-- 
+1.7.9.5
+

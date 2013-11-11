@@ -1,0 +1,40 @@
+From fd7875ecc3aed494fa0f50beeff774e6dbc1b9f4 Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Sun, 10 Nov 2013 22:23:24 +0200
+Subject: [PATCH 08/11] Add x11 checks in Preferences.
+
+---
+ chrome/browser/chromeos/preferences.cc |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/chrome/browser/chromeos/preferences.cc b/chrome/browser/chromeos/preferences.cc
+index f8bf43b..2cc145e 100644
+--- a/chrome/browser/chromeos/preferences.cc
++++ b/chrome/browser/chromeos/preferences.cc
+@@ -522,11 +522,12 @@ void Preferences::NotifyPrefChanged(const std::string* pref_name) {
+     // Unlike kLanguagePreloadEngines and some other input method
+     // preferencs, we don't need to send this to ibus-daemon.
+   }
+-
++#if defined(USE_X11)
+   if (!pref_name || *pref_name == prefs::kLanguageXkbAutoRepeatEnabled) {
+     const bool enabled = xkb_auto_repeat_enabled_.GetValue();
+     input_method::XKeyboard::SetAutoRepeatEnabled(enabled);
+   }
++#endif
+   if (!pref_name || ((*pref_name == prefs::kLanguageXkbAutoRepeatDelay) ||
+                      (*pref_name == prefs::kLanguageXkbAutoRepeatInterval))) {
+     UpdateAutoRepeatRate();
+@@ -631,7 +632,9 @@ void Preferences::UpdateAutoRepeatRate() {
+   rate.repeat_interval_in_ms = xkb_auto_repeat_interval_pref_.GetValue();
+   DCHECK(rate.initial_delay_in_ms > 0);
+   DCHECK(rate.repeat_interval_in_ms > 0);
++#if defined(USE_X11)
+   input_method::XKeyboard::SetAutoRepeatRate(rate);
++#endif
+ }
+ 
+ void Preferences::OnTouchHudProjectionToggled(bool enabled) {
+-- 
+1.7.9.5
+

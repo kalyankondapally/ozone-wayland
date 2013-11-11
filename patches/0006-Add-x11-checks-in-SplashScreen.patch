@@ -1,0 +1,38 @@
+From 5cbeaa61eefb0e9c481458a12bd5fbc601dc8cdf Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Sun, 10 Nov 2013 22:15:48 +0200
+Subject: [PATCH 06/11] Add x11 checks in SplashScreen.
+
+---
+ ash/wm/boot_splash_screen_chromeos.cc |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/ash/wm/boot_splash_screen_chromeos.cc b/ash/wm/boot_splash_screen_chromeos.cc
+index 0074340..0eca0b6 100644
+--- a/ash/wm/boot_splash_screen_chromeos.cc
++++ b/ash/wm/boot_splash_screen_chromeos.cc
+@@ -6,7 +6,9 @@
+ 
+ #include "third_party/skia/include/core/SkBitmap.h"
+ #include "ui/aura/root_window.h"
++#if defined(USE_X11)
+ #include "ui/base/x/x11_util.h"
++#endif
+ #include "ui/compositor/layer.h"
+ #include "ui/compositor/layer_type.h"
+ #include "ui/compositor/scoped_layer_animation_settings.h"
+@@ -34,9 +36,11 @@ class BootSplashScreen::CopyHostContentLayerDelegate
+     // TODO(derat): Instead of copying the data, use GLX_EXT_texture_from_pixmap
+     // to create a zero-copy texture (when possible):
+     // https://codereview.chromium.org/10543125
++#if defined(USE_X11)
+     ui::CopyAreaToCanvas(root_window_->GetAcceleratedWidget(),
+         gfx::Rect(root_window_->GetHostOrigin(), root_window_->GetHostSize()),
+         gfx::Point(), canvas);
++#endif
+   }
+ 
+   virtual void OnDeviceScaleFactorChanged(float device_scale_factor) OVERRIDE {}
+-- 
+1.7.9.5
+

@@ -1,0 +1,25 @@
+From a1d790bf158bc2d463f181915f5cdd2ea9f17920 Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Sun, 10 Nov 2013 22:57:32 +0200
+Subject: [PATCH 09/11] Fix crash in capslockdelegate with a temporary fix.
+
+---
+ .../browser/ui/ash/caps_lock_delegate_chromeos.cc  |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/chrome/browser/ui/ash/caps_lock_delegate_chromeos.cc b/chrome/browser/ui/ash/caps_lock_delegate_chromeos.cc
+index acddcb5..d387a7e 100644
+--- a/chrome/browser/ui/ash/caps_lock_delegate_chromeos.cc
++++ b/chrome/browser/ui/ash/caps_lock_delegate_chromeos.cc
+@@ -14,7 +14,7 @@
+ CapsLockDelegate::CapsLockDelegate(chromeos::input_method::XKeyboard* xkeyboard)
+     : xkeyboard_(xkeyboard),
+       is_running_on_chromeos_(base::SysInfo::IsRunningOnChromeOS()),
+-      caps_lock_is_on_(xkeyboard_->CapsLockIsEnabled()) {
++      caps_lock_is_on_(true) {
+   chromeos::SystemKeyEventListener* system_event_listener =
+       chromeos::SystemKeyEventListener::GetInstance();
+   // SystemKeyEventListener should be instantiated when we're running production
+-- 
+1.7.9.5
+
