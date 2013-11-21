@@ -1,0 +1,40 @@
+From 87f42f6d6da551600bab6518d1f1e4b143505e7a Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Thu, 21 Nov 2013 13:39:22 +0200
+Subject: [PATCH] 0013-displaychangeobserver
+
+---
+ ash/display/display_change_observer_chromeos.cc |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/ash/display/display_change_observer_chromeos.cc b/ash/display/display_change_observer_chromeos.cc
+index 4215ac8..f904c40 100644
+--- a/ash/display/display_change_observer_chromeos.cc
++++ b/ash/display/display_change_observer_chromeos.cc
+@@ -19,7 +19,9 @@
+ #include "chromeos/display/output_util.h"
+ #include "grit/ash_strings.h"
+ #include "ui/base/l10n/l10n_util.h"
++#if defined(USE_X11)
+ #include "ui/base/x/x11_util.h"
++#endif
+ #include "ui/compositor/dip_util.h"
+ #include "ui/gfx/display.h"
+ 
+@@ -137,11 +139,13 @@ void DisplayChangeObserver::OnDisplayModeChanged(
+       continue;
+ 
+     float device_scale_factor = 1.0f;
++#if defined(USE_X11)
+     if (!ui::IsXDisplaySizeBlackListed(output.width_mm, output.height_mm) &&
+         (kInchInMm * mode_info->width / output.width_mm) >
+         kHighDensityDPIThreshold) {
+       device_scale_factor = 2.0f;
+     }
++#endif
+     gfx::Rect display_bounds(
+         output.x, output.y, mode_info->width, mode_info->height);
+ 
+-- 
+1.7.9.5
+
