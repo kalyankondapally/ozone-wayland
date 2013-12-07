@@ -1,21 +1,20 @@
-From da312a97f485d0c2ebfb4d11f41740f6be41d5c1 Mon Sep 17 00:00:00 2001
+From 446205ae15a94ca14b67567c12e24b83e6b30eee Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
-Date: Sun, 10 Nov 2013 22:20:30 +0200
-Subject: [PATCH 07/11] Add x11 checks in InputMethodManagerImpl.
+Date: Sat, 7 Dec 2013 11:38:35 +0200
+Subject: [PATCH] Add x11 checks in InputMethodManagerImpl.
 
 ---
  .../input_method/input_method_manager_impl.cc      |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/chrome/browser/chromeos/input_method/input_method_manager_impl.cc b/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
-index 2f08176..49f9a53 100644
+index 496e6ab..b623d66 100644
 --- a/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
 +++ b/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
-@@ -362,14 +362,14 @@ bool InputMethodManagerImpl::ChangeInputMethodInternal(
-     previous_input_method_ = current_input_method_;
+@@ -349,12 +349,14 @@ bool InputMethodManagerImpl::ChangeInputMethodInternal(
      current_input_method_ = *descriptor;
    }
--
+ 
 +#if defined(USE_X11)
    // Change the keyboard layout to a preferred layout for the input method.
    if (!xkeyboard_->SetCurrentKeyboardLayoutByName(
@@ -23,21 +22,22 @@ index 2f08176..49f9a53 100644
      LOG(ERROR) << "Failed to change keyboard layout to "
                 << current_input_method_.GetPreferredKeyboardLayout();
    }
--
 +#endif
+ 
    // Update input method indicators (e.g. "US", "DV") in Chrome windows.
    FOR_EACH_OBSERVER(InputMethodManager::Observer,
-                     observers_,
-@@ -752,7 +752,9 @@ void InputMethodManagerImpl::Init(base::SequencedTaskRunner* ui_task_runner) {
-   DCHECK(thread_checker_.CalledOnValidThread());
+@@ -706,9 +708,9 @@ void InputMethodManagerImpl::InitializeComponentExtension() {
  
-   ibus_controller_.reset(IBusController::Create());
+ void InputMethodManagerImpl::Init(base::SequencedTaskRunner* ui_task_runner) {
+   DCHECK(thread_checker_.CalledOnValidThread());
+-
 +#if defined(USE_X11)
    xkeyboard_.reset(XKeyboard::Create());
-+ #endif
-   ibus_controller_->AddObserver(this);
- 
+-
++#endif
    // We can't call impl->Initialize here, because file thread is not available
+   // at this moment.
+   ui_task_runner->PostTask(
 -- 
 1.7.9.5
 

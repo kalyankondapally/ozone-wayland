@@ -1,15 +1,15 @@
-From 33566823210bccb86c7cf23c20ecca45c2393c78 Mon Sep 17 00:00:00 2001
+From cbec02cbd4b7de46f84322bc91e7bf244d2b612c Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
-Date: Thu, 21 Nov 2013 13:30:36 +0200
-Subject: [PATCH] Event rewriter changes.
+Date: Sun, 10 Nov 2013 22:58:16 +0200
+Subject: [PATCH 10/11] Event rewriter changes.
 
 ---
- chrome/browser/ui/ash/event_rewriter.cc |   34 +++++++++++++++++++------------
- chrome/browser/ui/ash/event_rewriter.h  |    2 ++
- 2 files changed, 23 insertions(+), 13 deletions(-)
+ chrome/browser/ui/ash/event_rewriter.cc |   36 ++++++++++++++++++++-----------
+ chrome/browser/ui/ash/event_rewriter.h  |    3 ++-
+ 2 files changed, 25 insertions(+), 14 deletions(-)
 
 diff --git a/chrome/browser/ui/ash/event_rewriter.cc b/chrome/browser/ui/ash/event_rewriter.cc
-index 7c2ceb5..a822b0e 100644
+index 7c2ceb5..2ece945 100644
 --- a/chrome/browser/ui/ash/event_rewriter.cc
 +++ b/chrome/browser/ui/ash/event_rewriter.cc
 @@ -17,10 +17,12 @@
@@ -25,7 +25,13 @@ index 7c2ceb5..a822b0e 100644
  
  // Get rid of a macro from Xlib.h that conflicts with OwnershipService class.
  #undef Status
-@@ -35,9 +37,11 @@
+@@ -31,13 +33,17 @@
+ #include "chrome/browser/chromeos/keyboard_driven_event_rewriter.h"
+ #include "chrome/browser/chromeos/login/login_display_host_impl.h"
+ #include "chrome/browser/chromeos/login/user_manager.h"
++#if defined(USE_X11)
+ #include "chrome/browser/chromeos/xinput_hierarchy_changed_event_listener.h"
++#endif
  #include "chrome/common/pref_names.h"
  #include "chromeos/chromeos_switches.h"
  #include "chromeos/ime/input_method_manager.h"
@@ -37,7 +43,7 @@ index 7c2ceb5..a822b0e 100644
  #include "ui/views/corewm/window_util.h"
  #endif
  
-@@ -45,7 +49,7 @@ namespace {
+@@ -45,7 +51,7 @@ namespace {
  
  const int kBadDeviceId = -1;
  
@@ -46,7 +52,7 @@ index 7c2ceb5..a822b0e 100644
  const char kNeo2LayoutId[] = "xkb:de:neo:ger";
  const char kCaMultixLayoutId[] = "xkb:ca:multix:fra";
  
-@@ -142,7 +146,7 @@ bool IsMod3UsedByCurrentInputMethod() {
+@@ -142,7 +148,7 @@ bool IsMod3UsedByCurrentInputMethod() {
  
  EventRewriter::EventRewriter()
      : last_device_id_(kBadDeviceId),
@@ -55,7 +61,7 @@ index 7c2ceb5..a822b0e 100644
        xkeyboard_for_testing_(NULL),
        keyboard_driven_event_rewriter_(
            new chromeos::KeyboardDrivenEventRewriter),
-@@ -153,7 +157,7 @@ EventRewriter::EventRewriter()
+@@ -153,7 +159,7 @@ EventRewriter::EventRewriter()
      ash::Shell::GetPrimaryRootWindow()->GetDispatcher()->
          AddRootWindowObserver(this);
    }
@@ -64,7 +70,7 @@ index 7c2ceb5..a822b0e 100644
    if (base::SysInfo::IsRunningOnChromeOS()) {
      chromeos::XInputHierarchyChangedEventListener::GetInstance()
          ->AddObserver(this);
-@@ -167,7 +171,7 @@ EventRewriter::~EventRewriter() {
+@@ -167,7 +173,7 @@ EventRewriter::~EventRewriter() {
      ash::Shell::GetPrimaryRootWindow()->GetDispatcher()->
          RemoveRootWindowObserver(this);
    }
@@ -73,7 +79,7 @@ index 7c2ceb5..a822b0e 100644
    if (base::SysInfo::IsRunningOnChromeOS()) {
      chromeos::XInputHierarchyChangedEventListener::GetInstance()
          ->RemoveObserver(this);
-@@ -222,13 +226,14 @@ ash::EventRewriterDelegate::Action EventRewriter::RewriteOrFilterLocatedEvent(
+@@ -222,13 +228,14 @@ ash::EventRewriterDelegate::Action EventRewriter::RewriteOrFilterLocatedEvent(
  }
  
  void EventRewriter::OnKeyboardMappingChanged(const aura::RootWindow* root) {
@@ -89,7 +95,7 @@ index 7c2ceb5..a822b0e 100644
    DCHECK_NE(XIAllDevices, device_id);
    DCHECK_NE(XIAllMasterDevices, device_id);
    if (device_id == XIAllDevices || device_id == XIAllMasterDevices) {
-@@ -256,6 +261,7 @@ void EventRewriter::DeviceAdded(int device_id) {
+@@ -256,6 +263,7 @@ void EventRewriter::DeviceAdded(int device_id) {
    }
  
    XIFreeDeviceInfo(device_info);
@@ -97,7 +103,7 @@ index 7c2ceb5..a822b0e 100644
  }
  
  void EventRewriter::DeviceRemoved(int device_id) {
-@@ -278,6 +284,7 @@ void EventRewriter::RefreshKeycodes() {
+@@ -278,6 +286,7 @@ void EventRewriter::RefreshKeycodes() {
    keysym_to_keycode_map_.clear();
  }
  
@@ -105,11 +111,16 @@ index 7c2ceb5..a822b0e 100644
  KeyCode EventRewriter::NativeKeySymToNativeKeycode(KeySym keysym) {
    if (keysym_to_keycode_map_.count(keysym))
      return keysym_to_keycode_map_[keysym];
-@@ -371,9 +378,10 @@ const PrefService* EventRewriter::GetPrefService() const {
-   Profile* profile = ProfileManager::GetDefaultProfile();
-   return profile ? profile->GetPrefs() : NULL;
+@@ -364,6 +373,7 @@ bool EventRewriter::RewriteWithKeyboardRemappingsByKeyCode(
+   return false;
  }
+ #endif  // defined(OS_CHROMEOS)
 +#endif
+ 
+ const PrefService* EventRewriter::GetPrefService() const {
+   if (pref_service_for_testing_)
+@@ -373,7 +383,7 @@ const PrefService* EventRewriter::GetPrefService() const {
+ }
  
  void EventRewriter::Rewrite(ui::KeyEvent* event) {
 -#if defined(OS_CHROMEOS)
@@ -117,7 +128,7 @@ index 7c2ceb5..a822b0e 100644
    // Do not rewrite an event sent by ui_controls::SendKeyPress(). See
    // crbug.com/136465.
    if (event->native_event()->xkey.send_event)
-@@ -413,7 +421,7 @@ void EventRewriter::GetRemappedModifierMasks(
+@@ -413,7 +423,7 @@ void EventRewriter::GetRemappedModifierMasks(
      unsigned int original_native_modifiers,
      int* remapped_flags,
      unsigned int* remapped_native_modifiers) const {
@@ -126,7 +137,7 @@ index 7c2ceb5..a822b0e 100644
    // TODO(glotov): remove the following condition when we do not restart chrome
    // when user logs in as guest. See Rewrite() for details.
    if (chromeos::UserManager::Get()->IsLoggedInAsGuest() &&
-@@ -474,7 +482,7 @@ void EventRewriter::GetRemappedModifierMasks(
+@@ -474,7 +484,7 @@ void EventRewriter::GetRemappedModifierMasks(
  }
  
  bool EventRewriter::RewriteModifiers(ui::KeyEvent* event) {
@@ -135,7 +146,7 @@ index 7c2ceb5..a822b0e 100644
    // Do nothing if we have just logged in as guest but have not restarted chrome
    // process yet (so we are still on the login screen). In this situations we
    // have no user profile so can not do anything useful.
-@@ -589,7 +597,7 @@ bool EventRewriter::RewriteModifiers(ui::KeyEvent* event) {
+@@ -589,7 +599,7 @@ bool EventRewriter::RewriteModifiers(ui::KeyEvent* event) {
  
  bool EventRewriter::RewriteNumPadKeys(ui::KeyEvent* event) {
    bool rewritten = false;
@@ -144,7 +155,7 @@ index 7c2ceb5..a822b0e 100644
    XEvent* xev = event->native_event();
    XKeyEvent* xkey = &(xev->xkey);
  
-@@ -681,7 +689,7 @@ bool EventRewriter::RewriteNumPadKeys(ui::KeyEvent* event) {
+@@ -681,7 +691,7 @@ bool EventRewriter::RewriteNumPadKeys(ui::KeyEvent* event) {
  }
  
  bool EventRewriter::RewriteExtendedKeys(ui::KeyEvent* event) {
@@ -153,7 +164,7 @@ index 7c2ceb5..a822b0e 100644
    XEvent* xev = event->native_event();
    XKeyEvent* xkey = &(xev->xkey);
    const KeySym keysym = XLookupKeysym(xkey, 0);
-@@ -851,7 +859,7 @@ bool EventRewriter::RewriteExtendedKeys(ui::KeyEvent* event) {
+@@ -851,7 +861,7 @@ bool EventRewriter::RewriteExtendedKeys(ui::KeyEvent* event) {
  }
  
  bool EventRewriter::RewriteFunctionKeys(ui::KeyEvent* event) {
@@ -162,7 +173,7 @@ index 7c2ceb5..a822b0e 100644
    XEvent* xev = event->native_event();
    XKeyEvent* xkey = &(xev->xkey);
    const KeySym keysym = XLookupKeysym(xkey, 0);
-@@ -983,7 +991,7 @@ bool EventRewriter::RewriteFunctionKeys(ui::KeyEvent* event) {
+@@ -983,7 +993,7 @@ bool EventRewriter::RewriteFunctionKeys(ui::KeyEvent* event) {
  }
  
  void EventRewriter::RewriteLocatedEvent(ui::LocatedEvent* event) {
@@ -171,7 +182,7 @@ index 7c2ceb5..a822b0e 100644
    if (event->flags() & ui::EF_IS_SYNTHESIZED)
      return;
  
-@@ -1029,7 +1037,7 @@ void EventRewriter::OverwriteEvent(ui::KeyEvent* event,
+@@ -1029,7 +1039,7 @@ void EventRewriter::OverwriteEvent(ui::KeyEvent* event,
                                     unsigned int new_native_state,
                                     ui::KeyboardCode new_keycode,
                                     int new_flags) {
@@ -181,7 +192,7 @@ index 7c2ceb5..a822b0e 100644
    XKeyEvent* xkey = &(xev->xkey);
    xkey->keycode = new_native_keycode;
 diff --git a/chrome/browser/ui/ash/event_rewriter.h b/chrome/browser/ui/ash/event_rewriter.h
-index 68ef918..ccac206 100644
+index 68ef918..db54085 100644
 --- a/chrome/browser/ui/ash/event_rewriter.h
 +++ b/chrome/browser/ui/ash/event_rewriter.h
 @@ -102,6 +102,7 @@ class EventRewriter : public ash::EventRewriterDelegate,
@@ -192,14 +203,15 @@ index 68ef918..ccac206 100644
    // Converts an X key symbol like XK_Control_L to a key code.
    unsigned char NativeKeySymToNativeKeycode(KeySym keysym);
  
-@@ -151,6 +152,7 @@ class EventRewriter : public ash::EventRewriterDelegate,
+@@ -151,7 +152,7 @@ class EventRewriter : public ash::EventRewriterDelegate,
        ui::KeyboardCode* remapped_keycode,
        unsigned int* remapped_mods);
  #endif
+-
 +#endif
- 
    // Returns the PrefService that should be used.
    const PrefService* GetPrefService() const;
+ 
 -- 
 1.7.9.5
 
