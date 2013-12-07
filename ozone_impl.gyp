@@ -44,6 +44,11 @@
         'platform/ozone_export_wayland.h',
         'platform/ozone_platform_wayland.cc',
         'platform/ozone_platform_wayland.h',
+        'impl/chromeos/output_configurator_ozone_wayland.cc',
+        'impl/chromeos/output_configurator_ozone_wayland.h',
+        'impl/chromeos/output_util_wayland.cc',
+        'impl/chromeos/output_configurator_delegate_wayland.cc',
+        'impl/chromeos/output_configurator_delegate_wayland.h',
       ],
     },
   ]

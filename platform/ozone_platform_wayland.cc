@@ -18,6 +18,13 @@ ui::EventFactoryOzone* OzonePlatformWayland::GetEventFactoryOzone() {
   return &event_factory_ozone_;
 }
 
+#if defined(OS_CHROMEOS)
+chromeos::OutputConfiguratorOzone*
+  OzonePlatformWayland::GetOutputConfiguratorOzone() {
+  return &output_configurator_;
+}
+#endif
+
 OzonePlatform* CreateOzonePlatformWayland() { return new OzonePlatformWayland; }
 
 }  // namespace ui
