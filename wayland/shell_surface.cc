@@ -6,7 +6,9 @@
 
 #include "ozone/wayland/display.h"
 #include "ozone/wayland/surface.h"
+
 #include "base/logging.h"
+#include "base/strings/utf_string_conversions.h"
 
 namespace ozonewayland {
 
@@ -19,12 +21,10 @@ WaylandShellSurface::WaylandShellSurface(WaylandWindow* window)
       return;
 
   surface_ = new WaylandSurface();
-  if (display->shell()) {
+  if (display->shell())
     shell_surface_ = wl_shell_get_shell_surface(
         display->shell(),
         surface_->wlSurface());
-    UpdateShellSurface(window->Type());
-  }
 
   if (shell_surface_)
   {
@@ -53,21 +53,38 @@ WaylandShellSurface::~WaylandShellSurface() {
   }
 }
 
-void WaylandShellSurface::UpdateShellSurface(WaylandWindow::ShellType type) const
+void WaylandShellSurface::UpdateShellSurface(WaylandWindow::ShellType type,
+                                             WaylandShellSurface* shell_parent,
+                                             unsigned x,
+                                             unsigned y) const
 {
   switch (type) {
   case WaylandWindow::TOPLEVEL:
     wl_shell_surface_set_toplevel(shell_surface_);
     break;
-  case WaylandWindow::FULLSCREEN:
   case WaylandWindow::TRANSIENT:
-  case WaylandWindow::MENU:
+    wl_shell_surface_set_transient(shell_surface_,
+                                   shell_parent->Surface()->wlSurface(),
+                                   x,
+                                   y,
+                                   WL_SHELL_SURFACE_TRANSIENT_INACTIVE);
+    break;
+  case WaylandWindow::FULLSCREEN:
+    wl_shell_surface_set_fullscreen(shell_surface_,
+                                    WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT,
+                                    0,
+                                    NULL);
+    break;
   case WaylandWindow::CUSTOM:
-      NOTREACHED() << "UnSupported Shell Type.";
+      NOTREACHED() << "Unsupported shell type: " << type;
     break;
     default:
       break;
   }
+}
+
+void WaylandShellSurface::SetWindowTitle(const string16& title) {
+  wl_shell_surface_set_title(shell_surface_, UTF16ToUTF8(title).c_str());
 }
 
 void WaylandShellSurface::HandleConfigure(void *data,
@@ -76,8 +93,6 @@ void WaylandShellSurface::HandleConfigure(void *data,
                                           int32_t width,
                                           int32_t height)
 {
-  WaylandWindow *window = static_cast<WaylandWindow*>(data);
-  window->SetBounds(gfx::Rect(0, 0, width, height));
 }
 
 void WaylandShellSurface::HandlePopupDone(void *data,

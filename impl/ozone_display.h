@@ -5,8 +5,6 @@
 #ifndef OZONE_WAYLAND_OZONE_DISPLAY_H_
 #define OZONE_WAYLAND_OZONE_DISPLAY_H_
 
-#include <map>
-
 #include "base/compiler_specific.h"
 #include "base/message_loop/message_loop.h"
 #include "ui/gfx/ozone/surface_factory_ozone.h"
@@ -22,6 +20,7 @@ class WaylandDisplay;
 class WaylandWindow;
 class WaylandDispatcher;
 class WaylandScreen;
+class WindowChangeObserver;
 
 class OzoneDisplay : public gfx::SurfaceFactoryOzone,
                      public base::MessageLoop::DestructionObserver {
@@ -36,10 +35,20 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
     Restore = 7, // Restore Widget.
     Active = 8, // Widget is Activated.
     InActive = 9, // Widget is DeActivated.
-    Resize = 10 // Widget is Resized.
+    Resize = 10, // Widget is Resized.
+    Destroyed = 11 // Widget is Destroyed.
   };
 
   typedef unsigned WidgetState;
+
+  enum {
+    Window = 1, // A decorated Window.
+    WindowFrameLess = 2, // An undecorated Window.
+    Transient = 3 // An undecorated Window, with transient properties
+                  // specialized to menus.
+  };
+
+  typedef unsigned WidgetType;
 
   static OzoneDisplay* GetInstance();
 
@@ -72,6 +81,8 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
   // MessageLoop::DestructionObserver overrides.
   virtual void WillDestroyCurrentMessageLoop() OVERRIDE;
 
+  DesktopScreenWayland* GetPrimaryScreen() const;
+
   void SetWidgetState(gfx::AcceleratedWidget w,
                       WidgetState state,
                       unsigned width = 0,
@@ -80,6 +91,19 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
                             WidgetState state,
                             unsigned width,
                             unsigned height);
+  void SetWidgetTitle(gfx::AcceleratedWidget w, const string16& title);
+  void OnWidgetTitleChanged(gfx::AcceleratedWidget w, const string16& title);
+  void SetWidgetAttributes(gfx::AcceleratedWidget widget,
+                           gfx::AcceleratedWidget parent,
+                           unsigned x,
+                           unsigned y,
+                           WidgetType type);
+  void OnWidgetAttributesChanged(gfx::AcceleratedWidget widget,
+                                 gfx::AcceleratedWidget parent,
+                                 unsigned x,
+                                 unsigned y,
+                                 WidgetType type);
+  void SetWindowChangeObserver(WindowChangeObserver* observer);
 
  private:
   enum State {
@@ -91,7 +115,7 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
   typedef unsigned CurrentState;
 
   void EstablishChannel();
-  void OnChannelEstablished(unsigned id);
+  void OnChannelEstablished();
   void OnChannelClosed();
   void OnChannelHostDestroyed();
   void OnOutputSizeChanged(WaylandScreen* screen, int width, int height);
@@ -103,9 +127,10 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
   void InitializeDispatcher(int fd = 0);
   void LookAheadOutputGeometry();
 
+  static void DelayedInitialization(OzoneDisplay* display);
+
   CurrentState state_;
   gfx::SurfaceFactoryOzone::HardwareState initialized_state_;
-  bool initialized_ :1;
   const int kMaxDisplaySize_;
 
   DesktopScreenWayland* desktop_screen_;
@@ -116,7 +141,6 @@ class OzoneDisplay : public gfx::SurfaceFactoryOzone,
   OzoneDisplayChannelHost* host_;
   EventFactoryWayland* e_factory_;
   char* spec_;
-  std::map<unsigned, WaylandWindow*> widget_map_;
   static OzoneDisplay* instance_;
 
   friend class OzoneProcessObserver;

@@ -34,13 +34,18 @@ class OzoneDisplayChannelHost : public IPC::ChannelProxy::MessageFilter {
                        unsigned state,
                        unsigned width,
                        unsigned height);
-
+  void SendWidgetTitle(unsigned w, const string16& title);
+  void SendWidgetAttributes(unsigned widget,
+                            unsigned parent,
+                            unsigned x,
+                            unsigned y,
+                            unsigned type);
   void OnChannelEstablished(unsigned router_id);
   void OnMotionNotify(float x, float y);
-  void OnButtonNotify(int state, int flags, float x, float y);
+  void OnButtonNotify(unsigned handle, int state, int flags, float x, float y);
   void OnAxisNotify(float x, float y, float xoffset, float yoffset);
-  void OnPointerEnter(float x, float y);
-  void OnPointerLeave(float x, float y);
+  void OnPointerEnter(unsigned handle, float x, float y);
+  void OnPointerLeave(unsigned handle, float x, float y);
   void OnKeyNotify(unsigned type, unsigned code, unsigned modifiers);
   void OnOutputSizeChanged(unsigned width, unsigned height);
 
@@ -50,7 +55,7 @@ class OzoneDisplayChannelHost : public IPC::ChannelProxy::MessageFilter {
   virtual void OnChannelClosing() OVERRIDE;
 
   bool Send(IPC::Message* message);
-  bool UpdateConnection(int gpu_id);
+  bool UpdateConnection();
 
  private:
   WaylandDispatcher* dispatcher_;
@@ -58,7 +63,6 @@ class OzoneDisplayChannelHost : public IPC::ChannelProxy::MessageFilter {
   // Messages are not sent by host until connection is established. Host queues
   // all these messages to send after connection is established.
   DeferredMessages deferred_messages_;
-  unsigned host_id_;
   unsigned router_id_;
   DISALLOW_COPY_AND_ASSIGN(OzoneDisplayChannelHost);
 };

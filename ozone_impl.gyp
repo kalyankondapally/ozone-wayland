@@ -7,13 +7,17 @@
   'targets': [
     {
       'target_name': 'wayland',
-      'type': 'static_library',
+      'type': '<(component)',
       'dependencies': [
         '<(DEPTH)/skia/skia.gyp:skia',
+        '<(DEPTH)/base/third_party/dynamic_annotations/dynamic_annotations.gyp:dynamic_annotations',
         'wayland/wayland.gyp:wayland_toolkit'
       ],
       'include_dirs': [
         '..',
+      ],
+      'defines': [
+        'OZONE_WAYLAND_IMPLEMENTATION',
       ],
       'sources': [
         'impl/desktop_factory_wayland.cc',
@@ -28,8 +32,6 @@
         'impl/event_factory_wayland.h',
         'impl/ozone_display.cc',
         'impl/ozone_display.h',
-        'impl/ozone_platform_wayland.cc',
-        'impl/ozone_platform_wayland.h',
         'impl/ipc/child_process_observer.h',
         'impl/ipc/child_process_observer.cc',
         'impl/ipc/display_channel.h',
@@ -39,6 +41,9 @@
         'impl/ipc/messages.h',
         'impl/ipc/message_generator.h',
         'impl/ipc/message_generator.cc',
+        'platform/ozone_export_wayland.h',
+        'platform/ozone_platform_wayland.cc',
+        'platform/ozone_platform_wayland.h',
       ],
     },
   ]

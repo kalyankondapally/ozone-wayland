@@ -14,16 +14,17 @@
 
 namespace ozonewayland {
 
-WaylandWindow::WaylandWindow(ShellType type) : shell_surface_(NULL),
+WaylandWindow::WaylandWindow(unsigned handle) :
+    shell_surface_(NULL),
+    handle_(handle),
     window_(NULL),
-    type_(type),
+    type_(None),
     allocation_(gfx::Rect(0, 0, 1, 1))
 {
-  if (type_ != None)
-    shell_surface_ = new WaylandShellSurface(this);
 }
 
 WaylandWindow::~WaylandWindow() {
+  wl_surface_set_user_data(GetSurface(), 0);
   if (window_) {
     delete window_;
     window_ = NULL;
@@ -36,25 +37,38 @@ WaylandWindow::~WaylandWindow() {
   }
 }
 
-void WaylandWindow::SetShellType(ShellType type)
+void WaylandWindow::SetShellAttributes(ShellType type)
 {
-  if (!shell_surface_ || (type_ == type))
+  if (type_ == type)
     return;
 
-  type_ = type;
-  switch (type_) {
-    case TOPLEVEL:
-      shell_surface_->UpdateShellSurface(TOPLEVEL);
-      break;
-    case FULLSCREEN:
-    case TRANSIENT:
-    case MENU:
-    case CUSTOM:
-      NOTREACHED() << "UnSupported Shell Type.";
-      break;
-    default:
-      break;
+  if (!shell_surface_) {
+    shell_surface_ = new WaylandShellSurface(this);
+    wl_surface_set_user_data(GetSurface(), this);
   }
+
+  type_ = type;
+  shell_surface_->UpdateShellSurface(type_, NULL, 0, 0);
+}
+
+void WaylandWindow::SetShellAttributes(ShellType type,
+                                       WaylandShellSurface* shell_parent,
+                                       unsigned x,
+                                       unsigned y)
+{
+  DCHECK(shell_parent && (type == TRANSIENT));
+
+  if (!shell_surface_) {
+    shell_surface_ = new WaylandShellSurface(this);
+    wl_surface_set_user_data(GetSurface(), this);
+  }
+
+  type_ = type;
+  shell_surface_->UpdateShellSurface(type_, shell_parent, x, y);
+}
+
+void WaylandWindow::SetWindowTitle(const string16& title) {
+  shell_surface_->SetWindowTitle(title);
 }
 
 void WaylandWindow::Maximize()
@@ -72,13 +86,21 @@ void WaylandWindow::Restore()
   NOTIMPLEMENTED();
 }
 
-void WaylandWindow::SetFullscreen()
+void WaylandWindow::ToggleFullscreen()
 {
-  NOTIMPLEMENTED();
+  if (type_ == FULLSCREEN)
+    SetShellAttributes(TOPLEVEL);
+  else
+    SetShellAttributes(FULLSCREEN);
 }
 
 void WaylandWindow::RealizeAcceleratedWidget()
 {
+  if (!shell_surface_) {
+    LOG(ERROR) << "Shell type not set. Setting it to TopLevel";
+    SetShellAttributes(TOPLEVEL);
+  }
+
   if (!window_)
     window_ = new EGLWindow(shell_surface_->Surface()->wlSurface(),
                             allocation_.width(), allocation_.height());
@@ -93,6 +115,10 @@ void WaylandWindow::HandleSwapBuffers()
 wl_egl_window* WaylandWindow::egl_window() const
 {
   return window_ ? window_->egl_window() : 0;
+}
+
+struct wl_surface* WaylandWindow::GetSurface() const {
+  return shell_surface_ ? shell_surface_->Surface()->wlSurface() : 0;
 }
 
 bool WaylandWindow::SetBounds(const gfx::Rect& new_bounds)

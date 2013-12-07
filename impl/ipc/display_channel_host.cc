@@ -10,9 +10,11 @@
 
 namespace ozonewayland {
 
+// This should be same as defined in display_channel.
+#define CHANNEL_ROUTE_ID -0x1
+
 OzoneDisplayChannelHost::OzoneDisplayChannelHost()
     : channel_(NULL),
-      host_id_(0),
       router_id_(0)
 {
   dispatcher_ = WaylandDispatcher::GetInstance();
@@ -29,17 +31,18 @@ OzoneDisplayChannelHost::~OzoneDisplayChannelHost()
 
 void OzoneDisplayChannelHost::EstablishChannel()
 {
-  if (host_id_)
+  if (router_id_ == CHANNEL_ROUTE_ID)
     return;
 
   content::BrowserThread::PostTask(content::BrowserThread::IO, FROM_HERE,
       base::Bind(base::IgnoreResult(&OzoneDisplayChannelHost::UpdateConnection),
-          this, host_id_));
+          this));
 }
 
 void OzoneDisplayChannelHost::ChannelClosed()
 {
-  host_id_ = 0;
+  router_id_ = 0;
+  channel_ = NULL;
 }
 
 void OzoneDisplayChannelHost::SendWidgetState(unsigned w,
@@ -47,7 +50,7 @@ void OzoneDisplayChannelHost::SendWidgetState(unsigned w,
                                               unsigned width,
                                               unsigned height)
 {
-  if (router_id_)
+  if (router_id_ == CHANNEL_ROUTE_ID)
     Send(new WaylandWindow_State(router_id_, w, state, width, height));
   else
     deferred_messages_.push(new WaylandWindow_State(router_id_,
@@ -57,10 +60,37 @@ void OzoneDisplayChannelHost::SendWidgetState(unsigned w,
                                                     height));
 }
 
+void OzoneDisplayChannelHost::SendWidgetAttributes(unsigned widget,
+                                                   unsigned parent,
+                                                   unsigned x,
+                                                   unsigned y,
+                                                   unsigned type)
+{
+  if (router_id_ == CHANNEL_ROUTE_ID)
+    Send(new WaylandWindow_Attributes(router_id_, widget, parent, x, y, type));
+  else
+    deferred_messages_.push(new WaylandWindow_Attributes(router_id_,
+                                                         widget,
+                                                         parent,
+                                                         x,
+                                                         y,
+                                                         type));
+}
+
+void OzoneDisplayChannelHost::SendWidgetTitle(
+    unsigned w, const string16& title) {
+  if (router_id_ == CHANNEL_ROUTE_ID)
+    Send(new WaylandWindow_Title(router_id_, w, title));
+  else
+    deferred_messages_.push(new WaylandWindow_Title(router_id_,
+                                                    w,
+                                                    title));
+}
+
 void OzoneDisplayChannelHost::OnChannelEstablished(unsigned route_id)
 {
-  router_id_ = host_id_ + route_id;
-  Send(new WaylandMsg_DisplayChannelEstablished(route_id, router_id_));
+  router_id_ = route_id;
+  Send(new WaylandMsg_DisplayChannelEstablished(route_id));
   while (!deferred_messages_.empty()) {
     deferred_messages_.front()->set_routing_id(router_id_);
     Send(deferred_messages_.front());
@@ -73,12 +103,13 @@ void OzoneDisplayChannelHost::OnMotionNotify(float x, float y)
   dispatcher_->MotionNotify(x, y);
 }
 
-void OzoneDisplayChannelHost::OnButtonNotify(int state,
+void OzoneDisplayChannelHost::OnButtonNotify(unsigned handle,
+                                             int state,
                                              int flags,
                                              float x,
                                              float y)
 {
-  dispatcher_->ButtonNotify(state, flags, x, y);
+  dispatcher_->ButtonNotify(handle, state, flags, x, y);
 }
 
 void OzoneDisplayChannelHost::OnAxisNotify(float x,
@@ -89,14 +120,14 @@ void OzoneDisplayChannelHost::OnAxisNotify(float x,
   dispatcher_->AxisNotify(x, y, xoffset, yoffset);
 }
 
-void OzoneDisplayChannelHost::OnPointerEnter(float x, float y)
+void OzoneDisplayChannelHost::OnPointerEnter(unsigned handle, float x, float y)
 {
-  dispatcher_->PointerEnter(x, y);
+  dispatcher_->PointerEnter(handle, x, y);
 }
 
-void OzoneDisplayChannelHost::OnPointerLeave(float x, float y)
+void OzoneDisplayChannelHost::OnPointerLeave(unsigned handle, float x, float y)
 {
-  dispatcher_->PointerLeave(x, y);
+  dispatcher_->PointerLeave(handle, x, y);
 }
 
 void OzoneDisplayChannelHost::OnKeyNotify(unsigned type,
@@ -119,7 +150,6 @@ bool OzoneDisplayChannelHost::OnMessageReceived(const IPC::Message& message)
 
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(OzoneDisplayChannelHost, message)
-  IPC_MESSAGE_HANDLER(WaylandMsg_EstablishDisplayChannel, OnChannelEstablished)
   IPC_MESSAGE_HANDLER(WaylandInput_MotionNotify, OnMotionNotify)
   IPC_MESSAGE_HANDLER(WaylandInput_ButtonNotify, OnButtonNotify)
   IPC_MESSAGE_HANDLER(WaylandInput_AxisNotify, OnAxisNotify)
@@ -141,6 +171,7 @@ void OzoneDisplayChannelHost::OnFilterAdded(IPC::Channel* channel)
 void OzoneDisplayChannelHost::OnChannelClosing()
 {
   channel_ = NULL;
+  router_id_ = 0;
 }
 
 bool OzoneDisplayChannelHost::Send(IPC::Message* message)
@@ -162,17 +193,15 @@ bool OzoneDisplayChannelHost::Send(IPC::Message* message)
   return false;
 }
 
-bool OzoneDisplayChannelHost::UpdateConnection(int gpu_id)
+bool OzoneDisplayChannelHost::UpdateConnection()
 {
-  content::GpuProcessHost* host = content::GpuProcessHost::FromID(gpu_id);
-  if (!host)
-    host = content::GpuProcessHost::Get(
-        content::GpuProcessHost::GPU_PROCESS_KIND_SANDBOXED,
-        content::CAUSE_FOR_GPU_LAUNCH_BROWSER_STARTUP);
+  content::GpuProcessHost* host = content::GpuProcessHost::Get(
+      content::GpuProcessHost::GPU_PROCESS_KIND_SANDBOXED,
+      content::CAUSE_FOR_GPU_LAUNCH_BROWSER_STARTUP);
 
   DCHECK(host);
   host->AddFilter(this);
-  host_id_ = host->host_id();
+  OnChannelEstablished(CHANNEL_ROUTE_ID);
 }
 
 }  // namespace ozonewayland

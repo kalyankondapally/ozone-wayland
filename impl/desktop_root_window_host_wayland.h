@@ -7,8 +7,9 @@
 #define DESKTOP_ROOT_WINDOW_HOST_WAYLAND_H_
 
 #include "base/basictypes.h"
-#include "ui/aura/root_window_host.h"
+#include "ui/aura/window_tree_host.h"
 #include "ui/views/widget/desktop_aura/desktop_root_window_host.h"
+#include "ozone/wayland/window_change_observer.h"
 
 namespace views {
 class DesktopDispatcherClient;
@@ -25,6 +26,7 @@ class DesktopDragDropClientWayland;
 class VIEWS_EXPORT DesktopRootWindowHostWayland :
     public views::DesktopRootWindowHost,
     public aura::RootWindowHost,
+    public WindowChangeObserver,
     public base::MessageLoop::Dispatcher {
  public:
   DesktopRootWindowHostWayland(
@@ -44,10 +46,16 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
     Maximized = 0x04, // Window is maximized,
     Minimized = 0x08, // Window is minimized.
     Normal = 0x10, // Window is in Normal Mode.
-    Active = 0x20, // Window is Active.
+    Active = 0x20 // Window is Active.
   };
 
   typedef unsigned RootWindowState;
+
+  // Accepts a opaque handle widget and returns associated
+  // DesktopRootWindowHostWayland.
+  static DesktopRootWindowHostWayland* GetHostForAcceleratedWidget(
+      gfx::AcceleratedWidget widget);
+
   // Initializes our Ozone surface to draw on. This method performs all
   // initialization related to talking to the Ozone server.
   void InitWaylandWindow(const views::Widget::InitParams& params);
@@ -125,10 +133,12 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
                               const gfx::ImageSkia& app_icon) OVERRIDE;
   virtual void InitModalType(ui::ModalType modal_type) OVERRIDE;
   virtual void FlashFrame(bool flash_frame) OVERRIDE;
-  virtual void SetInactiveRenderingDisabled(bool disable_inactive) OVERRIDE;
+  virtual void OnRootViewLayout() const OVERRIDE;
+  virtual void OnNativeWidgetFocus() OVERRIDE;
+  virtual void OnNativeWidgetBlur() OVERRIDE;
+  virtual bool IsAnimatingClosed() const OVERRIDE;
 
   // Overridden from aura::RootWindowHost:
-  virtual void SetDelegate(aura::RootWindowHostDelegate* delegate) OVERRIDE;
   virtual aura::RootWindow* GetRootWindow() OVERRIDE;
   virtual gfx::AcceleratedWidget GetAcceleratedWidget() OVERRIDE;
   virtual void Show() OVERRIDE;
@@ -147,17 +157,14 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
   virtual void UnConfineCursor() OVERRIDE;
   virtual void OnCursorVisibilityChanged(bool show) OVERRIDE;
   virtual void MoveCursorTo(const gfx::Point& location) OVERRIDE;
-  virtual void SetFocusWhenShown(bool focus_when_shown) OVERRIDE;
-  virtual bool GrabSnapshot(
-      const gfx::Rect& snapshot_bounds,
-      std::vector<unsigned char>* png_representation) OVERRIDE;
   virtual void PostNativeEvent(const base::NativeEvent& native_event) OVERRIDE;
   virtual void OnDeviceScaleFactorChanged(float device_scale_factor) OVERRIDE;
   virtual void PrepareForShutdown() OVERRIDE;
-  virtual void OnRootViewLayout() const OVERRIDE;
-  virtual void OnNativeWidgetFocus() OVERRIDE;
-  virtual void OnNativeWidgetBlur() OVERRIDE;
-  virtual bool IsAnimatingClosed() const OVERRIDE;
+
+  // Window Change Observer.
+  virtual void OnWindowFocused(unsigned windowhandle) OVERRIDE;
+  virtual void OnWindowEnter(unsigned windowhandle) OVERRIDE;
+  virtual void OnWindowLeave(unsigned windowhandle) OVERRIDE;
 
   // Overridden from DesktopSelectionProviderAuraOzone:
   //virtual void SetDropHandler(
@@ -165,6 +172,10 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
 
   // Overridden from Dispatcher:
   virtual bool Dispatch(const base::NativeEvent& event) OVERRIDE;
+
+  std::list<gfx::AcceleratedWidget>& open_windows();
+  void Register();
+  void Reset();
 
   base::WeakPtrFactory<DesktopRootWindowHostWayland> close_widget_factory_;
 
@@ -181,12 +192,20 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
 
   RootWindowState state_;
 
+  // Current bounds of DRWH.
   gfx::Rect bounds_;
+  // Original bounds of DRWH.
+  gfx::Rect previous_bounds_;
 
-  aura::RootWindowHostDelegate* root_window_host_delegate_;
   aura::Window* content_window_;
 
   views::DesktopNativeWidgetAura* desktop_native_widget_aura_;
+  // We can optionally have a parent which can order us to close, or own
+  // children who we're responsible for closing when we CloseNow().
+  DesktopRootWindowHostWayland* window_parent_;
+  std::set<DesktopRootWindowHostWayland*> window_children_;
+
+  string16 title_;
 
   // The current root window host that has capture. While X11 has something
   // like Windows SetCapture()/ReleaseCapture(), it is entirely implicit and
@@ -194,6 +213,10 @@ class VIEWS_EXPORT DesktopRootWindowHostWayland :
   // can notify widgets when they have lost capture, which controls a bunch of
   // things in views like hiding menus.
   static DesktopRootWindowHostWayland* g_current_capture;
+  // Current dispatcher.
+  static DesktopRootWindowHostWayland* g_current_dispatcher_;
+  // List of all open windows.
+  static std::list<gfx::AcceleratedWidget>* open_windows_;
 
   DISALLOW_COPY_AND_ASSIGN(DesktopRootWindowHostWayland);
 };
