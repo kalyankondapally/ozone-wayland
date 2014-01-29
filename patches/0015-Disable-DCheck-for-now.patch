@@ -1,0 +1,27 @@
+From 4ecb30d213a7ad5fe89cff08bf2e9937b8098c42 Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Wed, 29 Jan 2014 07:01:31 +0200
+Subject: [PATCH 15/15] Disable DCheck for now
+
+---
+ chromeos/display/output_configurator.cc |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/chromeos/display/output_configurator.cc b/chromeos/display/output_configurator.cc
+index 0c27367..50de28d 100644
+--- a/chromeos/display/output_configurator.cc
++++ b/chromeos/display/output_configurator.cc
+@@ -155,8 +155,8 @@ void OutputConfigurator::SetProjectionDelegateForTesting(
+ }
+ 
+ void OutputConfigurator::SetInitialDisplayPower(DisplayPowerState power_state) {
+-  DCHECK_EQ(output_state_, gfx::NativeDisplayBridge::STATE_INVALID);
+-  power_state_ = power_state;
++  //DCHECK_EQ(output_state_, gfx::NativeDisplayBridge::STATE_INVALID);
++  //power_state_ = power_state;
+ }
+ 
+ void OutputConfigurator::Init(bool is_panel_fitting_enabled) {
+-- 
+1.7.9.5
+

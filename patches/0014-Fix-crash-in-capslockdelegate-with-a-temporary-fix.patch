@@ -1,7 +1,7 @@
-From a1d790bf158bc2d463f181915f5cdd2ea9f17920 Mon Sep 17 00:00:00 2001
+From 3eb069cc9d744d2b4c500fec087f5555811681dc Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Sun, 10 Nov 2013 22:57:32 +0200
-Subject: [PATCH 09/11] Fix crash in capslockdelegate with a temporary fix.
+Subject: [PATCH 14/15] Fix crash in capslockdelegate with a temporary fix.
 
 ---
  .../browser/ui/ash/caps_lock_delegate_chromeos.cc  |    2 +-

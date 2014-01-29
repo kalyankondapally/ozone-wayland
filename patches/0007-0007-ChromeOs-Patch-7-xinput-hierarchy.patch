@@ -1,7 +1,7 @@
-From 85f7bf4868827abddfd21f28d9f939ba5f4cfe8d Mon Sep 17 00:00:00 2001
+From d06da3ce1c13adf0410c47169fc48b93a6af8660 Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Mon, 28 Oct 2013 03:34:32 +0200
-Subject: [PATCH 04/11] 0007-ChromeOs-Patch-7-xinput-hierarchy
+Subject: [PATCH 07/15] 0007-ChromeOs-Patch-7-xinput-hierarchy
 
 ---
  .../xinput_hierarchy_changed_event_listener.cc     |   13 +++++++++++--

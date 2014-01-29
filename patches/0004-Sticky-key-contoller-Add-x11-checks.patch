@@ -1,0 +1,40 @@
+From 90cbb1b5499978cb558f5439f35edd9596c54f0b Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Wed, 29 Jan 2014 06:07:33 +0200
+Subject: [PATCH 04/15] Sticky key contoller: Add x11 checks.
+
+---
+ ash/sticky_keys/sticky_keys_controller.cc |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/ash/sticky_keys/sticky_keys_controller.cc b/ash/sticky_keys/sticky_keys_controller.cc
+index abb7906..ea74245 100644
+--- a/ash/sticky_keys/sticky_keys_controller.cc
++++ b/ash/sticky_keys/sticky_keys_controller.cc
+@@ -17,6 +17,7 @@
+ #include "ui/aura/window.h"
+ #include "ui/aura/window_tracker.h"
+ #include "ui/events/event.h"
++#include "ui/events/event_constants.h"
+ #include "ui/events/keycodes/keyboard_code_conversion.h"
+ 
+ namespace ash {
+@@ -409,6 +410,7 @@ void StickyKeysHandler::DispatchEventAndReleaseModifier(ui::Event* event) {
+   event_from_myself_ = false;
+ }
+ 
++#if defined(USE_X11)
+ void StickyKeysHandler::AppendNativeEventMask(unsigned int* state) {
+   unsigned int& state_ref = *state;
+   switch (modifier_flag_) {
+@@ -425,6 +427,7 @@ void StickyKeysHandler::AppendNativeEventMask(unsigned int* state) {
+       NOTREACHED();
+   }
+ }
++#endif
+ 
+ void StickyKeysHandler::AppendModifier(ui::KeyEvent* event) {
+ #if defined(USE_X11)
+-- 
+1.7.9.5
+

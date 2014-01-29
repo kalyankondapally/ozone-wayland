@@ -1,0 +1,93 @@
+From 180855f10932d1035eb23bd918b32b074d6dcf7d Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Wed, 29 Jan 2014 06:51:54 +0200
+Subject: [PATCH 09/15] Linking error in InputMethodEngine.
+
+---
+ .../chromeos/input_method/input_method_engine.cc   |   11 ++++++++---
+ chromeos/chromeos.gyp                              |    4 ++--
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/chrome/browser/chromeos/input_method/input_method_engine.cc b/chrome/browser/chromeos/input_method/input_method_engine.cc
+index e940891..c99f9e3 100644
+--- a/chrome/browser/chromeos/input_method/input_method_engine.cc
++++ b/chrome/browser/chromeos/input_method/input_method_engine.cc
+@@ -30,7 +30,11 @@
+ #include "ui/base/ime/candidate_window.h"
+ #include "ui/events/event.h"
+ #include "ui/events/keycodes/dom4/keycode_converter.h"
++#if defined(USE_X11)
+ #include "ui/events/keycodes/keyboard_code_conversion_x.h"
++#else
++#include "ui/events/keycodes/keyboard_code_conversion.h"
++#endif
+ #include "ui/keyboard/keyboard_controller.h"
+ 
+ namespace chromeos {
+@@ -213,7 +217,7 @@ bool InputMethodEngine::SendKeyEvents(
+   if (context_id != context_id_ || context_id_ == -1) {
+     return false;
+   }
+-
++#if defined(USE_X11)
+   aura::WindowEventDispatcher* dispatcher =
+       ash::Shell::GetPrimaryRootWindow()->GetDispatcher();
+ 
+@@ -225,7 +229,6 @@ bool InputMethodEngine::SendKeyEvents(
+     // KeyboardCodeFromXKyeSym assumes US keyboard layout.
+     ui::KeycodeConverter* conv = ui::KeycodeConverter::GetInstance();
+     DCHECK(conv);
+-
+      // DOM code (KeyA) -> XKB -> XKeySym (XK_A) -> KeyboardCode (VKEY_A)
+     const uint16 native_keycode =
+         conv->CodeToNativeKeycode(event.code.c_str());
+@@ -242,6 +245,7 @@ bool InputMethodEngine::SendKeyEvents(
+     ui::KeyEvent ui_event(type, key_code, code, flags, false /* is_char */);
+     dispatcher->AsWindowTreeHostDelegate()->OnHostKeyEvent(&ui_event);
+   }
++#endif
+   return true;
+ }
+ 
+@@ -523,10 +527,10 @@ void GetExtensionKeyboardEventFromKeyEvent(
+   ext_event->caps_lock = event.IsCapsLockDown();
+ 
+   uint32 ibus_keyval = 0;
++#if defined(USE_X11)
+   if (event.HasNativeEvent()) {
+     const base::NativeEvent& native_event = event.native_event();
+     DCHECK(native_event);
+-
+     XKeyEvent* x_key = &(static_cast<XEvent*>(native_event)->xkey);
+     KeySym keysym = NoSymbol;
+     ::XLookupString(x_key, NULL, 0, &keysym, NULL);
+@@ -541,6 +545,7 @@ void GetExtensionKeyboardEventFromKeyEvent(
+     ibus_keyval = ui::XKeysymForWindowsKeyCode(event.key_code(),
+                                                event.IsShiftDown());
+   }
++#endif
+   ext_event->key = input_method::GetIBusKey(ibus_keyval);
+ }
+ }  // namespace
+diff --git a/chromeos/chromeos.gyp b/chromeos/chromeos.gyp
+index 3324221..22f0e44 100644
+--- a/chromeos/chromeos.gyp
++++ b/chromeos/chromeos.gyp
+@@ -361,12 +361,12 @@
+             'ime/xkeyboard.h',
+             'display/display_configurator_x11.cc',
+             'display/display_configurator_x11.h',
+-            'display/output_configurator.cc',
+-            'display/output_configurator.h',
+             'display/output_util.cc',
+             'display/output_util.h',
+             'ime/xkeyboard.cc',
+             'ime/xkeyboard.h',
++            'display/native_display_bridge_x11.cc',
++            'display/native_display_bridge_x11.h',
+           ],
+         }],
+       ],
+-- 
+1.7.9.5
+

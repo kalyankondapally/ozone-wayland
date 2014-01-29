@@ -1,0 +1,69 @@
+From 3a5e7040b9cc23a34f3c97618e27225bfb8674e6 Mon Sep 17 00:00:00 2001
+From: Kondapally Kalyan <kalyan.kondapally@intel.com>
+Date: Wed, 29 Jan 2014 06:00:45 +0200
+Subject: [PATCH 03/15] Shell specific changes.
+
+---
+ ash/shell.cc |    3 ---
+ ash/shell.h  |    4 ----
+ 2 files changed, 7 deletions(-)
+
+diff --git a/ash/shell.cc b/ash/shell.cc
+index 7687738..827d5b9 100644
+--- a/ash/shell.cc
++++ b/ash/shell.cc
+@@ -115,15 +115,12 @@
+ #include "ui/views/widget/widget.h"
+ 
+ #if defined(OS_CHROMEOS)
+-#if defined(USE_X11)
+ #include "ash/ash_constants.h"
+ #include "ash/display/display_change_observer_chromeos.h"
+ #include "ash/display/display_error_observer_chromeos.h"
+ #include "ash/display/output_configurator_animation.h"
+-#include "base/message_loop/message_pump_x11.h"
+ #include "base/sys_info.h"
+ #include "chromeos/display/output_configurator.h"
+-#endif  // defined(USE_X11)
+ #include "ash/display/resolution_notification_controller.h"
+ #include "ash/sticky_keys/sticky_keys_controller.h"
+ #include "ash/system/chromeos/brightness/brightness_controller_chromeos.h"
+diff --git a/ash/shell.h b/ash/shell.h
+index a9a0d2a..0fdc75f 100644
+--- a/ash/shell.h
++++ b/ash/shell.h
+@@ -485,7 +485,6 @@ class ASH_EXPORT Shell
+   void DoInitialWorkspaceAnimation();
+ 
+ #if defined(OS_CHROMEOS)
+-#if defined(USE_X11)
+   // TODO(oshima): Move these objects to DisplayController.
+   chromeos::OutputConfigurator* output_configurator() {
+     return output_configurator_.get();
+@@ -496,7 +495,6 @@ class ASH_EXPORT Shell
+   internal::DisplayErrorObserver* display_error_observer() {
+     return display_error_observer_.get();
+   }
+-#endif  // defined(USE_X11)
+ 
+   internal::ResolutionNotificationController*
+       resolution_notification_controller() {
+@@ -687,7 +685,6 @@ class ASH_EXPORT Shell
+   scoped_ptr<StickyKeysController> sticky_keys_controller_;
+   scoped_ptr<internal::ResolutionNotificationController>
+       resolution_notification_controller_;
+-#if defined(USE_X11)
+   // Controls video output device state.
+   scoped_ptr<chromeos::OutputConfigurator> output_configurator_;
+   scoped_ptr<internal::OutputConfiguratorAnimation>
+@@ -696,7 +693,6 @@ class ASH_EXPORT Shell
+ 
+   // Listens for output changes and updates the display manager.
+   scoped_ptr<internal::DisplayChangeObserver> display_change_observer_;
+-#endif  // defined(USE_X11)
+ #endif  // defined(OS_CHROMEOS)
+ 
+   // |native_cursor_manager_| is owned by |cursor_manager_|, but we keep a
+-- 
+1.7.9.5
+

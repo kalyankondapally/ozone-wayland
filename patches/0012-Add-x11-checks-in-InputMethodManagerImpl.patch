@@ -1,17 +1,17 @@
-From 446205ae15a94ca14b67567c12e24b83e6b30eee Mon Sep 17 00:00:00 2001
+From 657fb1427077c24fe38fc27a5275455cc76b086c Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Sat, 7 Dec 2013 11:38:35 +0200
-Subject: [PATCH] Add x11 checks in InputMethodManagerImpl.
+Subject: [PATCH 12/15] Add x11 checks in InputMethodManagerImpl.
 
 ---
  .../input_method/input_method_manager_impl.cc      |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/chrome/browser/chromeos/input_method/input_method_manager_impl.cc b/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
-index 496e6ab..b623d66 100644
+index f779aeb..ca127f2 100644
 --- a/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
 +++ b/chrome/browser/chromeos/input_method/input_method_manager_impl.cc
-@@ -349,12 +349,14 @@ bool InputMethodManagerImpl::ChangeInputMethodInternal(
+@@ -362,12 +362,14 @@ bool InputMethodManagerImpl::ChangeInputMethodInternal(
      current_input_method_ = *descriptor;
    }
  
@@ -26,7 +26,7 @@ index 496e6ab..b623d66 100644
  
    // Update input method indicators (e.g. "US", "DV") in Chrome windows.
    FOR_EACH_OBSERVER(InputMethodManager::Observer,
-@@ -706,9 +708,9 @@ void InputMethodManagerImpl::InitializeComponentExtension() {
+@@ -723,9 +725,9 @@ void InputMethodManagerImpl::InitializeComponentExtension() {
  
  void InputMethodManagerImpl::Init(base::SequencedTaskRunner* ui_task_runner) {
    DCHECK(thread_checker_.CalledOnValidThread());

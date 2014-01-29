@@ -1,17 +1,17 @@
-From 7f65a6f0102f32323058c489ef005baa679ca2f3 Mon Sep 17 00:00:00 2001
+From 4c9334596b7917a7a8301652effc56e50e6418ea Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Sun, 10 Nov 2013 22:13:19 +0200
-Subject: [PATCH 05/11] Add x11 checks in Ash init.
+Subject: [PATCH 11/15] Add x11 checks in Ash init.
 
 ---
  chrome/browser/ui/ash/ash_init.cc |    4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/chrome/browser/ui/ash/ash_init.cc b/chrome/browser/ui/ash/ash_init.cc
-index 8fa62e8..5058f1d 100644
+index 7d980af..c8818b9 100644
 --- a/chrome/browser/ui/ash/ash_init.cc
 +++ b/chrome/browser/ui/ash/ash_init.cc
-@@ -29,8 +29,10 @@
+@@ -30,8 +30,10 @@
  #include "chrome/browser/ui/ash/volume_controller_chromeos.h"
  #include "chromeos/chromeos_switches.h"
  #include "chromeos/login/login_state.h"
@@ -22,7 +22,7 @@ index 8fa62e8..5058f1d 100644
  
  namespace chrome {
  
-@@ -48,7 +50,9 @@ void OpenAsh() {
+@@ -49,7 +51,9 @@ void OpenAsh() {
      // Hides the cursor outside of the Aura root window. The cursor will be
      // drawn within the Aura root window, and it'll remain hidden after the
      // Aura window is closed.

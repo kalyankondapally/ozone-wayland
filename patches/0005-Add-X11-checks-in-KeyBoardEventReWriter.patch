@@ -1,7 +1,7 @@
-From 54f220ea40e9e66027dd9d893714b49921e1121d Mon Sep 17 00:00:00 2001
+From c9ce3e34a817c80458ca793835ba85f922b8fe6e Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Sun, 10 Nov 2013 21:33:01 +0200
-Subject: [PATCH 02/11] Add X11 checks in KeyBoardEventReWriter
+Subject: [PATCH 05/15] Add X11 checks in KeyBoardEventReWriter
 
 ---
  .../chromeos/keyboard_driven_event_rewriter.cc     |    4 ++++

@@ -1,7 +1,7 @@
-From cbec02cbd4b7de46f84322bc91e7bf244d2b612c Mon Sep 17 00:00:00 2001
+From 7345aefe1698282fd841532a3ee4f9eaf5797e72 Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Sun, 10 Nov 2013 22:58:16 +0200
-Subject: [PATCH 10/11] Event rewriter changes.
+Subject: [PATCH 08/15] Event rewriter changes.
 
 ---
  chrome/browser/ui/ash/event_rewriter.cc |   36 ++++++++++++++++++++-----------
@@ -9,7 +9,7 @@ Subject: [PATCH 10/11] Event rewriter changes.
  2 files changed, 25 insertions(+), 14 deletions(-)
 
 diff --git a/chrome/browser/ui/ash/event_rewriter.cc b/chrome/browser/ui/ash/event_rewriter.cc
-index 7c2ceb5..2ece945 100644
+index d323f74..606503c 100644
 --- a/chrome/browser/ui/ash/event_rewriter.cc
 +++ b/chrome/browser/ui/ash/event_rewriter.cc
 @@ -17,10 +17,12 @@

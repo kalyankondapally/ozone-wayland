@@ -1,7 +1,7 @@
-From 9c2795fdf4accddaf56d71286d199a915dea8d2e Mon Sep 17 00:00:00 2001
+From ff42dd8d73e8c428348c9843c9e043ce2ab0f1ed Mon Sep 17 00:00:00 2001
 From: Kondapally Kalyan <kalyan.kondapally@intel.com>
 Date: Thu, 21 Nov 2013 13:37:11 +0200
-Subject: [PATCH] 0006-Add-x11-checks-in-SplashScreen
+Subject: [PATCH 10/15] 0006-Add-x11-checks-in-SplashScreen
 
 ---
  ash/wm/boot_splash_screen_chromeos.cc |    4 ++++

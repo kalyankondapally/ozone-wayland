@@ -7,9 +7,6 @@
 
 #include "ozone/impl/desktop_factory_wayland.h"
 #include "ozone/impl/ozone_display.h"
-#if defined(OS_CHROMEOS)
-#include "ozone/impl/chromeos/output_configurator_ozone_wayland.h"
-#endif
 #include "ozone/platform/ozone_export_wayland.h"
 #include "ozone/ui/ime/input_method_context_factory_wayland.h"
 #include "ui/events/ozone/event_factory_ozone.h"
@@ -27,9 +24,6 @@ class OzonePlatformWayland : public OzonePlatform {
 
   virtual gfx::SurfaceFactoryOzone* GetSurfaceFactoryOzone() OVERRIDE;
   virtual ui::EventFactoryOzone* GetEventFactoryOzone() OVERRIDE;
-#if defined(OS_CHROMEOS)
-  virtual chromeos::OutputConfiguratorOzone* GetOutputConfiguratorOzone();
-#endif
   virtual ui::InputMethodContextFactoryOzone*
       GetInputMethodContextFactoryOzone() OVERRIDE;
 
@@ -43,9 +37,6 @@ class OzonePlatformWayland : public OzonePlatform {
 
 #if defined(TOOLKIT_VIEWS) && !defined(OS_CHROMEOS)
   ozonewayland::DesktopFactoryWayland desktop_factory_ozone_;
-#endif
-#if defined(OS_CHROMEOS)
-  chromeos::OutputConfiguratorOzoneWayland output_configurator_;
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(OzonePlatformWayland);
