@@ -2,16 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef OZONE_WAYLAND_KEYBOARD_H_
-#define OZONE_WAYLAND_KEYBOARD_H_
-
-#include "ozone/wayland/display.h"
+#ifndef OZONE_WAYLAND_INPUT_KEYBOARD_H_
+#define OZONE_WAYLAND_INPUT_KEYBOARD_H_
 
 #include <xkbcommon/xkbcommon.h>
 
+#include "ozone/wayland/display.h"
+
 namespace ozonewayland {
 
-class WaylandDispatcher;
+class EventConverterOzoneWayland;
+class KeyboardEngineXKB;
 
 class WaylandKeyboard {
  public:
@@ -54,31 +55,12 @@ class WaylandKeyboard {
                              uint32_t group);
 
   wl_keyboard* input_keyboard_;
-  WaylandDispatcher* dispatcher_;
-
-  // Keeps track of the currently active keyboard modifiers. We keep this
-  // since we want to advertise keyboard modifiers with mouse events.
-  uint32_t keyboard_modifiers_;
-
-  // keymap used to transform keyboard events.
-  struct xkb {
-    struct xkb_rule_names names;
-    struct xkb_keymap *keymap;
-    struct xkb_state *state;
-    struct xkb_context *context;
-    xkb_mod_mask_t control_mask;
-    xkb_mod_mask_t alt_mask;
-    xkb_mod_mask_t shift_mask;
-  };
-
-  xkb xkb_;
-
-  void InitXKB();
-  void FiniXKB();
+  EventConverterOzoneWayland* dispatcher_;
+  KeyboardEngineXKB* backend_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandKeyboard);
 };
 
 }  // namespace ozonewayland
 
-#endif  // OZONE_WAYLAND_KEYBOARD_H_
+#endif  // OZONE_WAYLAND_INPUT_KEYBOARD_H_

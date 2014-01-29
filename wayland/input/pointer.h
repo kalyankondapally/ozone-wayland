@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef OZONE_WAYLAND_POINTER_H_
-#define OZONE_WAYLAND_POINTER_H_
+#ifndef OZONE_WAYLAND_INPUT_POINTER_H_
+#define OZONE_WAYLAND_INPUT_POINTER_H_
 
 #include "ozone/wayland/display.h"
 #include "ui/gfx/point.h"
 
 namespace ozonewayland {
 
+class EventConverterOzoneWayland;
 class WaylandCursor;
-class WaylandDispatcher;
 class WaylandWindow;
 
 class WaylandPointer {
@@ -20,7 +20,7 @@ class WaylandPointer {
   ~WaylandPointer();
 
   void OnSeatCapabilities(wl_seat *seat, uint32_t caps);
-  WaylandCursor* Cursor() { return cursor_; }
+  WaylandCursor* Cursor() const { return cursor_; }
 
  private:
   static void OnMotionNotify(
@@ -60,9 +60,7 @@ class WaylandPointer {
       wl_surface* surface);
 
   WaylandCursor* cursor_;
-  WaylandDispatcher* dispatcher_;
-  // Keeps track of current focused window.
-  unsigned focused_window_handle_;
+  EventConverterOzoneWayland* dispatcher_;
   // Keeps track of the last position for the motion event. We want to
   // dispatch this with events such as wheel or button which don't have a
   // position associated on Wayland.
@@ -73,4 +71,4 @@ class WaylandPointer {
 
 }  // namespace ozonewayland
 
-#endif  // OZONE_WAYLAND_POINTER_H_
+#endif  // OZONE_WAYLAND_INPUT_POINTER_H_

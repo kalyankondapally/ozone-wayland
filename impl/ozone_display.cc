@@ -2,56 +2,57 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ozone/wayland/dispatcher.h"
 #include "ozone/impl/ozone_display.h"
 
-#include "ozone/impl/desktop_screen_wayland.h"
-#include "ozone/impl/event_factory_wayland.h"
-#include "ozone/wayland/display.h"
-#include "ozone/wayland/dispatcher.h"
-#include "ozone/wayland/screen.h"
-#include "ozone/wayland/window.h"
-#include "ozone/wayland/egl/egl_window.h"
-
-#include "ozone/impl/ipc/child_process_observer.h"
-#include "ozone/impl/ipc/display_channel.h"
-#include "ozone/impl/ipc/display_channel_host.h"
+#include <map>
+#include <string>
 
 #include "base/native_library.h"
 #include "content/child/child_process.h"
+#include "ozone/impl/desktop_screen_wayland.h"
+#include "ozone/impl/vsync_provider_wayland.h"
+#include "ozone/impl/ipc/child_process_observer.h"
+#include "ozone/impl/ipc/display_channel.h"
+#include "ozone/impl/ipc/display_channel_host.h"
+#include "ozone/ui/events/event_converter_in_process.h"
+#include "ozone/ui/events/remote_event_dispatcher.h"
+#include "ozone/wayland/display.h"
+#include "ozone/wayland/egl/egl_window.h"
+#include "ozone/wayland/screen.h"
+#include "ozone/wayland/window.h"
+#include "ui/gl/sync_control_vsync_provider.h"
 
 namespace ozonewayland {
 
 OzoneDisplay* OzoneDisplay::instance_ = NULL;
 
-OzoneDisplay* OzoneDisplay::GetInstance()
-{
+OzoneDisplay* OzoneDisplay::GetInstance() {
   return instance_;
 }
 
 OzoneDisplay::OzoneDisplay() : state_(UnInitialized),
+    initialized_state_(gfx::SurfaceFactoryOzone::INITIALIZED),
+    last_realized_widget_handle_(0),
+    kMaxDisplaySize_(20),
     desktop_screen_(NULL),
-    dispatcher_(NULL),
     display_(NULL),
     child_process_observer_(NULL),
     channel_(NULL),
     host_(NULL),
-    e_factory_(NULL),
-    spec_(NULL),
-    kMaxDisplaySize_(20)
-{
+    event_converter_(NULL),
+    spec_(NULL) {
   instance_ = this;
 }
 
-OzoneDisplay::~OzoneDisplay()
-{
+OzoneDisplay::~OzoneDisplay() {
   Terminate();
   instance_ = NULL;
 }
 
 const char* OzoneDisplay::DefaultDisplaySpec() {
   if (spec_[0] == '\0')
-    NOTREACHED() << "OutputHandleMode should come from Wayland compositor first";
+    NOTREACHED() <<
+        "OutputHandleMode should come from Wayland compositor first";
 
   return spec_;
 }
@@ -65,18 +66,15 @@ gfx::Screen* OzoneDisplay::CreateDesktopScreen() {
   return desktop_screen_;
 }
 
-gfx::SurfaceFactoryOzone::HardwareState OzoneDisplay::InitializeHardware()
-{
+gfx::SurfaceFactoryOzone::HardwareState OzoneDisplay::InitializeHardware() {
   if (state_ & Initialized)
     return initialized_state_;
 
-  DCHECK(base::MessageLoop::current());
-  base::MessageLoop::current()->AddDestructionObserver(this);
-
   state_ |= Initialized;
   display_ = new WaylandDisplay(WaylandDisplay::RegisterAsNeeded);
-  initialized_state_ = display_->display() ? gfx::SurfaceFactoryOzone::INITIALIZED
-                                           : gfx::SurfaceFactoryOzone::FAILED;
+  initialized_state_ =
+      display_->display() ? gfx::SurfaceFactoryOzone::INITIALIZED
+                          : gfx::SurfaceFactoryOzone::FAILED;
 
   if (initialized_state_ != gfx::SurfaceFactoryOzone::INITIALIZED)
     LOG(ERROR) << "OzoneDisplay failed to initialize hardware";
@@ -90,26 +88,23 @@ gfx::SurfaceFactoryOzone::HardwareState OzoneDisplay::InitializeHardware()
     // initialized.
     base::MessageLoop::current()->message_loop_proxy()->PostTask(
         FROM_HERE, base::Bind(&OzoneDisplay::DelayedInitialization, this));
-   }
+  }
 
   return initialized_state_;
 }
 
-intptr_t OzoneDisplay::GetNativeDisplay()
-{
+intptr_t OzoneDisplay::GetNativeDisplay() {
   return (intptr_t)display_->display();
 }
 
-void OzoneDisplay::ShutdownHardware()
-{
+void OzoneDisplay::ShutdownHardware() {
   Terminate();
 }
 
-gfx::AcceleratedWidget OzoneDisplay::GetAcceleratedWidget()
-{
+gfx::AcceleratedWidget OzoneDisplay::GetAcceleratedWidget() {
   static int opaque_handle = 0;
-  // Ensure dispatcher is initialized.
-  if (!dispatcher_)
+  // Ensure Event Converter is initialized.
+  if (!event_converter_)
     InitializeDispatcher();
 
   opaque_handle++;
@@ -120,20 +115,27 @@ gfx::AcceleratedWidget OzoneDisplay::GetAcceleratedWidget()
 
 gfx::AcceleratedWidget OzoneDisplay::RealizeAcceleratedWidget(
     gfx::AcceleratedWidget w) {
-  // Dispatcher should be already initialized unless we are in gpu process side.
-  // Initialize dispatcher and start polling for wayland events.
-  if (!dispatcher_)
+  // Event Converter should be already initialized unless we are in gpu process
+  // side.
+  if (!event_converter_)
     InitializeDispatcher(display_->GetDisplayFd());
 
   WaylandWindow* widget = GetWidget(w);
   DCHECK(widget);
+  last_realized_widget_handle_ = w;
   widget->RealizeAcceleratedWidget();
   return (gfx::AcceleratedWidget)widget->egl_window();
 }
 
 bool OzoneDisplay::LoadEGLGLES2Bindings(
-      gfx::SurfaceFactoryOzone::AddGLLibraryCallback add_gl_library,
-      gfx::SurfaceFactoryOzone::SetGLGetProcAddressProcCallback set_proc_address) {
+    gfx::SurfaceFactoryOzone::AddGLLibraryCallback add_gl_library,
+    gfx::SurfaceFactoryOzone::SetGLGetProcAddressProcCallback setprocaddress) {
+  // The variable EGL_PLATFORM specifies native platform to be used by the
+  // drivers (atleast on Mesa). When the variable is not set, Mesa uses the
+  // first platform listed in --with-egl-platforms during compilation. Thus, we
+  // ensure here that wayland is set as the native platform. However, we don't
+  // override the EGL_PLATFORM value in case it has already been set.
+  setenv("EGL_PLATFORM", "wayland", 0);
   std::string error;
   base::NativeLibrary gles_library = base::LoadNativeLibrary(
     base::FilePath("libGLESv2.so.2"), &error);
@@ -164,7 +166,7 @@ bool OzoneDisplay::LoadEGLGLES2Bindings(
     return false;
   }
 
-  set_proc_address.Run(get_proc_address);
+  setprocaddress.Run(get_proc_address);
   add_gl_library.Run(egl_library);
   add_gl_library.Run(gles_library);
   return true;
@@ -184,34 +186,38 @@ bool OzoneDisplay::AttemptToResizeAcceleratedWidget(gfx::AcceleratedWidget w,
   return window->SetBounds(bounds);
 }
 
-gfx::VSyncProvider* OzoneDisplay::GetVSyncProvider(gfx::AcceleratedWidget w) {
-  return 0;
+scoped_ptr<gfx::VSyncProvider>
+OzoneDisplay::CreateVSyncProvider(gfx::AcceleratedWidget w) {
+  DCHECK(last_realized_widget_handle_);
+  // This is based on the fact that we realize accelerated widget and create
+  // its vsync provider immediately (right after widget is realized). This
+  // saves us going through list of realized widgets and finding the right one.
+  unsigned handle = last_realized_widget_handle_;
+  last_realized_widget_handle_ = 0;
+  return scoped_ptr<gfx::VSyncProvider>(new WaylandSyncProvider(handle));
 }
 
 bool OzoneDisplay::SchedulePageFlip(gfx::AcceleratedWidget w) {
   return true;
 }
 
-const int32* OzoneDisplay::GetEGLSurfaceProperties(const int32* desired_list)
-{
+const int32* OzoneDisplay::GetEGLSurfaceProperties(const int32* desired_list) {
   return EGLWindow::GetEGLConfigAttribs();
 }
 
-void OzoneDisplay::WillDestroyCurrentMessageLoop()
-{
+void OzoneDisplay::WillDestroyCurrentMessageLoop() {
+  if (!child_process_observer_)
+    return;
+
   DCHECK(base::MessageLoop::current());
-  dispatcher_->MessageLoopDestroyed();
 
   if (child_process_observer_)
     child_process_observer_->WillDestroyCurrentMessageLoop();
 
-  if (e_factory_)
-    e_factory_->WillDestroyCurrentMessageLoop();
-
   base::MessageLoop::current()->RemoveDestructionObserver(this);
 }
 
-DesktopScreenWayland* OzoneDisplay::GetPrimaryScreen() const {
+const DesktopScreenWayland* OzoneDisplay::GetPrimaryScreen() const {
   // TODO(kalyan): For now always return DesktopScreen. Needs proper fixing
   // after multi screen support is added.
   return desktop_screen_;
@@ -220,8 +226,7 @@ DesktopScreenWayland* OzoneDisplay::GetPrimaryScreen() const {
 void OzoneDisplay::SetWidgetState(gfx::AcceleratedWidget w,
                                   WidgetState state,
                                   unsigned width,
-                                  unsigned height)
-{
+                                  unsigned height) {
   if (host_)
     host_->SendWidgetState(w, state, width, height);
   else
@@ -231,8 +236,7 @@ void OzoneDisplay::SetWidgetState(gfx::AcceleratedWidget w,
 void OzoneDisplay::OnWidgetStateChanged(gfx::AcceleratedWidget w,
                                        WidgetState state,
                                        unsigned width,
-                                       unsigned height)
-{
+                                       unsigned height) {
   switch (state) {
     case Create:
     {
@@ -280,15 +284,24 @@ void OzoneDisplay::OnWidgetStateChanged(gfx::AcceleratedWidget w,
       AttemptToResizeAcceleratedWidget(w, gfx::Rect(0, 0, width, height));
       break;
     case Destroyed:
+    {
       display_->DestroyWindow(w);
+      const std::map<unsigned, WaylandWindow*> widget_map =
+          display_->GetWindowList();
+
+      if (widget_map.empty()) {
+        WillDestroyCurrentMessageLoop();
+        display_->StopProcessingEvents();
+      }
       break;
+    }
     default:
       break;
   }
 }
 
 void OzoneDisplay::SetWidgetTitle(gfx::AcceleratedWidget w,
-                                  const string16& title) {
+                                  const base::string16& title) {
   if (host_)
     host_->SendWidgetTitle(w, title);
   else
@@ -296,7 +309,7 @@ void OzoneDisplay::SetWidgetTitle(gfx::AcceleratedWidget w,
 }
 
 void OzoneDisplay::OnWidgetTitleChanged(gfx::AcceleratedWidget w,
-                                  const string16& title) {
+                                  const base::string16& title) {
   WaylandWindow* widget = GetWidget(w);
   DCHECK(widget);
   widget->SetWindowTitle(title);
@@ -328,9 +341,9 @@ void OzoneDisplay::OnWidgetAttributesChanged(gfx::AcceleratedWidget widget,
   case WindowFrameLess:
     NOTIMPLEMENTED();
     break;
-  case Transient:
+  case Popup:
     DCHECK(parent_window);
-    window->SetShellAttributes(WaylandWindow::TRANSIENT,
+    window->SetShellAttributes(WaylandWindow::POPUP,
                                parent_window->ShellSurface(),
                                x,
                                y);
@@ -340,19 +353,19 @@ void OzoneDisplay::OnWidgetAttributesChanged(gfx::AcceleratedWidget widget,
   }
 }
 
-void OzoneDisplay::SetWindowChangeObserver(WindowChangeObserver* observer)
-{
-  DCHECK(dispatcher_);
-  dispatcher_->SetWindowChangeObserver(observer);
+void OzoneDisplay::OnOutputSizeChanged(unsigned width, unsigned height) {
+  if (spec_)
+    base::snprintf(spec_, kMaxDisplaySize_, "%dx%d*2", width, height);
+  if (desktop_screen_)
+    desktop_screen_->SetGeometry(gfx::Rect(0, 0, width, height));
 }
 
-void OzoneDisplay::DelayedInitialization(OzoneDisplay* display) {
-  display->channel_ = new OzoneDisplayChannel();
-  display->channel_->Register();
+void OzoneDisplay::SetWindowChangeObserver(WindowChangeObserver* observer) {
+  DCHECK(event_converter_);
+  event_converter_->SetWindowChangeObserver(observer);
 }
 
-void OzoneDisplay::EstablishChannel()
-{
+void OzoneDisplay::EstablishChannel() {
   if (state_ & ChannelConnected)
     return;
 
@@ -363,66 +376,46 @@ void OzoneDisplay::EstablishChannel()
   state_ |= ChannelConnected;
 }
 
-void OzoneDisplay::OnChannelEstablished()
-{
+void OzoneDisplay::OnChannelEstablished() {
   state_ |= ChannelConnected;
 }
 
-void OzoneDisplay::OnChannelClosed()
-{
-  state_ &= ~ChannelConnected;
-  if (!host_)
-    return;
-
-  host_->ChannelClosed();
-}
-
-void OzoneDisplay::OnChannelHostDestroyed()
-{
+void OzoneDisplay::OnChannelHostDestroyed() {
   state_ &= ~ChannelConnected;
   host_ = NULL;
 }
 
+void OzoneDisplay::DelayedInitialization(OzoneDisplay* display) {
+  display->channel_ = new OzoneDisplayChannel();
+  display->channel_->Register();
+}
+
 void OzoneDisplay::OnOutputSizeChanged(WaylandScreen* screen,
                                        int width,
-                                       int height)
-{
+                                       int height) {
   if (!(state_ & Initialized))
     return;
 
   if (screen != display_->PrimaryScreen()) {
-    NOTIMPLEMENTED () << "Multiple screens are not implemented";
+    NOTIMPLEMENTED() << "Multiple screens are not implemented";
     return;
   }
 
   if (channel_ && (state_ & ChannelConnected))
-    dispatcher_->OutputSizeChanged(width, height);
+    event_converter_->OutputSizeChanged(width, height);
   else
     OnOutputSizeChanged(width, height);
 }
 
-void OzoneDisplay::OnOutputSizeChanged(unsigned width, unsigned height)
-{
-  if (spec_)
-    base::snprintf(spec_, kMaxDisplaySize_, "%dx%d*2", width, height);
-  if (desktop_screen_)
-    desktop_screen_->SetGeometry(gfx::Rect(0, 0, width, height));
-}
-
-WaylandWindow* OzoneDisplay::CreateWidget(unsigned w)
-{
+void OzoneDisplay::CreateWidget(unsigned w) {
   DCHECK((!display_ && host_) || (display_ && !host_));
-  WaylandWindow* window = NULL;
   if (display_)
-    return display_->CreateAcceleratedSurface(w);
+    display_->CreateAcceleratedSurface(w);
   else
     host_->SendWidgetState(w, Create, 0, 0);
-
-  return window;
 }
 
-WaylandWindow* OzoneDisplay::GetWidget(gfx::AcceleratedWidget w)
-{
+WaylandWindow* OzoneDisplay::GetWidget(gfx::AcceleratedWidget w) {
   DCHECK(display_);
   const std::map<unsigned, WaylandWindow*> widget_map =
       display_->GetWindowList();
@@ -431,59 +424,38 @@ WaylandWindow* OzoneDisplay::GetWidget(gfx::AcceleratedWidget w)
     return it == widget_map.end() ? NULL : it->second;
 }
 
-void OzoneDisplay::Terminate()
-{
+void OzoneDisplay::Terminate() {
   if (!(state_ & Initialized))
     return;
 
   state_ &= ~Initialized;
-  if (spec_) {
+  if (spec_)
     delete[] spec_;
-    spec_ = NULL;
-  }
 
-  if (channel_) {
-    delete channel_;
-    channel_ = NULL;
-  }
-
-  if (child_process_observer_) {
-    delete child_process_observer_;
-    child_process_observer_ = NULL;
-  }
-
-  if (dispatcher_) {
-    delete dispatcher_;
-    dispatcher_ = NULL;
-  }
-
-  if (desktop_screen_) {
-    delete desktop_screen_;
-    desktop_screen_ = NULL;
-  }
-
-  if (display_) {
-    delete display_;
-    display_ = NULL;
-  }
+  delete channel_;
+  delete child_process_observer_;
+  delete desktop_screen_;
+  delete display_;
+  delete event_converter_;
 }
 
-void OzoneDisplay::InitializeDispatcher(int fd)
-{
-  dispatcher_ = new WaylandDispatcher(fd);
-
+void OzoneDisplay::InitializeDispatcher(int fd) {
+  DCHECK(base::MessageLoop::current() && !event_converter_);
   if (fd) {
-    dispatcher_->PostTask(WaylandDispatcher::Poll);
+    event_converter_ = new RemoteEventDispatcher();
   } else {
+    event_converter_ = new EventConverterInProcess();
     spec_ = new char[kMaxDisplaySize_];
     spec_[0] = '\0';
+    base::MessageLoop::current()->AddDestructionObserver(this);
+  }
 
-    if (display_)
-      e_factory_ = new EventFactoryWayland();
-    else {
-      child_process_observer_ = new OzoneProcessObserver(this);
-      EstablishChannel();
-    }
+
+  if (display_) {
+    display_->StartProcessingEvents();
+  } else {
+    child_process_observer_ = new OzoneProcessObserver(this);
+    EstablishChannel();
   }
 }
 

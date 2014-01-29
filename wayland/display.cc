@@ -5,15 +5,19 @@
 
 #include "ozone/wayland/display.h"
 
+#include "base/stl_util.h"
+#include "ozone/wayland/display_poll_thread.h"
 #include "ozone/wayland/input/cursor.h"
 #include "ozone/wayland/input_device.h"
 #include "ozone/wayland/screen.h"
 #include "ozone/wayland/window.h"
 
-#include "base/stl_util.h"
-
 namespace ozonewayland {
 WaylandDisplay* WaylandDisplay::instance_ = NULL;
+
+const std::list<WaylandScreen*>& WaylandDisplay::GetScreenList() const {
+  return screen_list_;
+}
 
 WaylandWindow* WaylandDisplay::CreateAcceleratedSurface(unsigned w) {
   WaylandWindow* window = new WaylandWindow(w);
@@ -30,14 +34,37 @@ void WaylandDisplay::DestroyWindow(unsigned w) {
   widget_map_.erase(w);
 }
 
-WaylandDisplay::WaylandDisplay(RegistrationType type) : compositor_(NULL),
+void WaylandDisplay::StartProcessingEvents() {
+  DCHECK(display_poll_thread_);
+  // Start polling for wayland events.
+  display_poll_thread_->StartProcessingEvents();
+}
+
+void WaylandDisplay::StopProcessingEvents() {
+  DCHECK(display_poll_thread_);
+  // Start polling for wayland events.
+  display_poll_thread_->StopProcessingEvents();
+}
+
+void WaylandDisplay::FlushDisplay() {
+  wl_display_flush(display_);
+}
+
+WaylandDisplay::WaylandDisplay(RegistrationType type) : display_(NULL),
+    registry_(NULL),
+    compositor_(NULL),
     shell_(NULL),
     shm_(NULL),
-    primary_screen_(NULL)
-{
+    primary_screen_(NULL),
+    primary_input_(NULL),
+    display_poll_thread_(NULL),
+    screen_list_(),
+    input_list_(),
+    widget_map_(),
+    serial_(0) {
   display_ = wl_display_connect(NULL);
   if (!display_)
-      return;
+    return;
 
   instance_ = this;
   static const struct wl_registry_listener registry_all = {
@@ -56,16 +83,16 @@ WaylandDisplay::WaylandDisplay(RegistrationType type) : compositor_(NULL),
 
   if (wl_display_roundtrip(display_) < 0)
     terminate();
+  else if (type == RegisterAsNeeded)
+    display_poll_thread_ = new WaylandDisplayPollThread(display_);
 }
 
-WaylandDisplay::~WaylandDisplay()
-{
+WaylandDisplay::~WaylandDisplay() {
   terminate();
 }
 
-void WaylandDisplay::terminate()
-{
-  if (widget_map_.size()) {
+void WaylandDisplay::terminate() {
+  if (!widget_map_.empty()) {
     STLDeleteValues(&widget_map_);
     widget_map_.clear();
   }
@@ -97,6 +124,8 @@ void WaylandDisplay::terminate()
   if (registry_)
     wl_registry_destroy(registry_);
 
+  delete display_poll_thread_;
+
   if (display_) {
     wl_display_flush(display_);
     wl_display_disconnect(display_);
@@ -106,8 +135,7 @@ void WaylandDisplay::terminate()
   instance_ = NULL;
 }
 
-void WaylandDisplay::SyncDisplay()
-{
+void WaylandDisplay::SyncDisplay() {
   wl_display_roundtrip(display_);
 }
 
@@ -116,8 +144,7 @@ void WaylandDisplay::DisplayHandleGlobal(void *data,
     struct wl_registry *registry,
     uint32_t name,
     const char *interface,
-    uint32_t version)
-{
+    uint32_t version) {
 
   WaylandDisplay* disp = static_cast<WaylandDisplay*>(data);
 
@@ -132,6 +159,7 @@ void WaylandDisplay::DisplayHandleGlobal(void *data,
   } else if (strcmp(interface, "wl_seat") == 0) {
     WaylandInputDevice *input_device = new WaylandInputDevice(disp, name);
     disp->input_list_.push_back(input_device);
+    disp->primary_input_ = disp->input_list_.front();
   } else if (strcmp(interface, "wl_shell") == 0) {
     disp->shell_ = static_cast<wl_shell*>(
         wl_registry_bind(registry, name, &wl_shell_interface, 1));
@@ -146,8 +174,7 @@ void WaylandDisplay::DisplayHandleOutputOnly(void *data,
                                              struct wl_registry *registry,
                                              uint32_t name,
                                              const char *interface,
-                                             uint32_t version)
-{
+                                             uint32_t version) {
   WaylandDisplay* disp = static_cast<WaylandDisplay*>(data);
 
   if (strcmp(interface, "wl_output") == 0) {

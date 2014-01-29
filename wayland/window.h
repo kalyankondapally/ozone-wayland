@@ -6,10 +6,10 @@
 #ifndef OZONE_WAYLAND_WINDOW_H_
 #define OZONE_WAYLAND_WINDOW_H_
 
-#include "ui/gfx/rect.h"
-#include "base/strings/string16.h"
-
 #include <wayland-client.h>
+
+#include "base/strings/string16.h"
+#include "ui/gfx/rect.h"
 
 namespace ozonewayland {
 
@@ -25,14 +25,14 @@ class WaylandWindow {
     None,
     TOPLEVEL,
     FULLSCREEN,
-    TRANSIENT,
+    POPUP,
     CUSTOM
   };
 
   typedef unsigned ShellType;
 
   // Creates a window and maps it to handle.
-  WaylandWindow(unsigned handle);
+  explicit WaylandWindow(unsigned handle);
   ~WaylandWindow();
 
   void SetShellAttributes(ShellType type);
@@ -40,7 +40,7 @@ class WaylandWindow {
                           WaylandShellSurface* shell_parent,
                           unsigned x,
                           unsigned y);
-  void SetWindowTitle(const string16& title);
+  void SetWindowTitle(const base::string16& title);
   void Maximize();
   void Minimize();
   void Restore();
@@ -48,10 +48,9 @@ class WaylandWindow {
 
   ShellType Type() const { return type_; }
   unsigned Handle() const { return handle_; }
-  WaylandShellSurface *ShellSurface() const { return shell_surface_; }
+  WaylandShellSurface* ShellSurface() const { return shell_surface_; }
 
   void RealizeAcceleratedWidget();
-  void HandleSwapBuffers();
 
   // Returns pointer to egl window associated with the window.
   // The WaylandWindow object owns the pointer.
@@ -66,9 +65,9 @@ class WaylandWindow {
   WaylandShellSurface* shell_surface_;
   EGLWindow* window_;
 
-  gfx::Rect allocation_;
   ShellType type_;
   unsigned handle_;
+  gfx::Rect allocation_;
   DISALLOW_COPY_AND_ASSIGN(WaylandWindow);
 };
 

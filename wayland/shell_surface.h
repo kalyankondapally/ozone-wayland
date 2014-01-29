@@ -5,10 +5,10 @@
 #ifndef OZONE_WAYLAND_SHELL_SURFACE_H_
 #define OZONE_WAYLAND_SHELL_SURFACE_H_
 
+#include <wayland-client.h>
+
 #include "base/basictypes.h"
 #include "ozone/wayland/window.h"
-
-#include <wayland-client.h>
 
 namespace ozonewayland {
 
@@ -17,14 +17,14 @@ class WaylandWindow;
 
 class WaylandShellSurface {
  public:
-  WaylandShellSurface(WaylandWindow* window);
+  explicit WaylandShellSurface(WaylandWindow* window);
   ~WaylandShellSurface();
 
   void UpdateShellSurface(WaylandWindow::ShellType type,
                           WaylandShellSurface* shell_parent,
                           unsigned x,
                           unsigned y) const;
-  void SetWindowTitle(const string16& title);
+  void SetWindowTitle(const base::string16& title);
   WaylandSurface* Surface() const { return surface_; }
 
   static void HandleConfigure(void *data,

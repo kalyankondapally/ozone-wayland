@@ -50,12 +50,14 @@
       'include_dirs': [
         '../..',
       ],
+      'includes': [
+        '../ui/ime/ime.gypi',
+      ],
       'sources': [
         'display.cc',
         'display.h',
-        'dispatcher.cc',
-        'dispatcher.h',
-        'global.h',
+        'display_poll_thread.cc',
+        'display_poll_thread.h',
         'input_device.cc',
         'input_device.h',
         'screen.cc',
@@ -71,10 +73,6 @@
         'egl/egl_window.h',
         'input/cursor.cc',
         'input/cursor.h',
-        'input/input_method_event_filter.cc',
-        'input/input_method_event_filter.h',
-        'input/kbd_conversion.cc',
-        'input/kbd_conversion.h',
         'input/keyboard.cc',
         'input/keyboard.h',
         'input/pointer.cc',

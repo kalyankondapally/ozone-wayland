@@ -10,14 +10,15 @@
 #define __STDC_FORMAT_MACROS
 #endif
 
-#include "base/basictypes.h"
-
+#include <wayland-client.h>
 #include <list>
 #include <map>
-#include <wayland-client.h>
+
+#include "base/basictypes.h"
 
 namespace ozonewayland {
 
+class WaylandDisplayPollThread;
 class WaylandInputDevice;
 class WaylandScreen;
 class WaylandWindow;
@@ -36,8 +37,10 @@ class WaylandDisplay {
 
   wl_registry* registry() const { return registry_; }
 
+  WaylandInputDevice* PrimaryInput() const { return primary_input_; }
+
   // Returns a list of the registered screens.
-  std::list<WaylandScreen*> GetScreenList() const { return screen_list_; }
+  const std::list<WaylandScreen*>& GetScreenList() const;
   WaylandScreen* PrimaryScreen() const { return primary_screen_ ; }
 
   wl_shell* shell() const { return shell_; }
@@ -45,6 +48,8 @@ class WaylandDisplay {
   wl_shm* shm() const { return shm_; }
   wl_compositor* GetCompositor() const { return compositor_; }
   int GetDisplayFd() const { return wl_display_get_fd(display_); }
+  unsigned GetSerial() const { return serial_; }
+  void SetSerial(unsigned serial) { serial_ = serial; }
 
   const WindowMap& GetWindowList() const { return widget_map_; }
 
@@ -58,14 +63,24 @@ class WaylandDisplay {
   // Destroys WaylandWindow whose handle is w.
   void DestroyWindow(unsigned w);
 
+  // Starts polling on display fd. This should be used when one needs to
+  // continuously read pending events coming from Wayland compositor and
+  // dispatch them. The polling is done completely on a separate thread and
+  // doesn't block the thread from which this is called.
+  void StartProcessingEvents();
+  // Stops polling on display fd.
+  void StopProcessingEvents();
+  // Flush Display.
+  void FlushDisplay();
+
  private:
   enum RegistrationType {
-    RegisterAsNeeded, // Handles all the required registrations.
-    RegisterOutputOnly // Only screen registration.
+    RegisterAsNeeded,  // Handles all the required registrations.
+    RegisterOutputOnly  // Only screen registration.
   };
 
-  WaylandDisplay(RegistrationType type);
-  virtual ~WaylandDisplay();
+  explicit WaylandDisplay(RegistrationType type);
+  ~WaylandDisplay();
   void terminate();
   void SyncDisplay();
   // This handler resolves all server events used in initialization. It also
@@ -92,10 +107,13 @@ class WaylandDisplay {
   wl_shell* shell_;
   wl_shm* shm_;
   WaylandScreen* primary_screen_;
+  WaylandInputDevice* primary_input_;
+  WaylandDisplayPollThread* display_poll_thread_;
 
   std::list<WaylandScreen*> screen_list_;
   std::list<WaylandInputDevice*> input_list_;
   WindowMap widget_map_;
+  unsigned serial_;
   static WaylandDisplay* instance_;
 
   friend class OzoneDisplay;

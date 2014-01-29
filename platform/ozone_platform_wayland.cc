@@ -25,6 +25,11 @@ chromeos::OutputConfiguratorOzone*
 }
 #endif
 
+ui::InputMethodContextFactoryOzone*
+OzonePlatformWayland::GetInputMethodContextFactoryOzone() {
+  return &input_method_context_factory_;
+}
+
 OzonePlatform* CreateOzonePlatformWayland() { return new OzonePlatformWayland; }
 
 }  // namespace ui

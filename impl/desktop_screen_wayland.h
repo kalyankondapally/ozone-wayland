@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef DESKTOP_SCREEN_WAYLAND_H__
-#define DESKTOP_SCREEN_WAYLAND_H__
+#ifndef OZONE_IMPL_DESKTOP_SCREEN_WAYLAND_H__
+#define OZONE_IMPL_DESKTOP_SCREEN_WAYLAND_H__
+
+#include <vector>
 
 #include "ui/gfx/screen.h"
+
+namespace aura {
+class Window;
+}
 
 namespace ozonewayland {
 
@@ -36,9 +42,11 @@ class DesktopScreenWayland : public gfx::Screen {
   virtual void RemoveObserver(gfx::DisplayObserver* observer) OVERRIDE;
 
   gfx::Rect rect_;
+  // The display objects we present to chrome.
+  std::vector<gfx::Display> displays_;
   DISALLOW_COPY_AND_ASSIGN(DesktopScreenWayland);
 };
 
-}
+}  // namespace ozonewayland
 
-#endif  // DESKTOP_SCREEN_WAYLAND_H__
+#endif  // OZONE_IMPL_DESKTOP_SCREEN_WAYLAND_H__
