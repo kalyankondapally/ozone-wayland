@@ -13,7 +13,7 @@ Ozone-Wayland is the implementation of Chromium's Ozone for supporting Wayland g
   - [License](#license)
 
 
-## Design
+## Design2
 
 Ozone is a set of classes in Chromium for abstracting different window systems on Linux. It provides abstraction for the construction of accelerated surfaces underlying Aura UI framework, input devices assignment and event handling.
 
