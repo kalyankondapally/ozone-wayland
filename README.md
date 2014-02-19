@@ -98,3 +98,8 @@ Instructions can be found here: https://github.com/otcshare/ozone-wayland/wiki
 ## License
 
 Ozone-Wayland's code uses the BSD license (check the LICENSE file in the project).
+
+<a href="https://scan.coverity.com/projects/1437">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/1437/badge.svg"/>
+</a>
