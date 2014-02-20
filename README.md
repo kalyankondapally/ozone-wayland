@@ -112,7 +112,7 @@ git config branch.branch_$BRANCH.remote branch-heads
 
 cd .. (cd to top level directory)
 gclient sync # Checkout all submodules at their branch DEPS revisions.
-./src/ozone/patches/patch-chromium.sh // Apply Ozone-Wayland specific patches.
+./src/ozone/patches/patch-chromium.sh # Apply Ozone-Wayland specific patches.
   ```
 
 
