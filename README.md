@@ -102,7 +102,7 @@ cd ~git/chromium (Your top level directory).
 gclient sync --with_branch_heads
 
 cd src/
-BRANCH=1809 ## Branch number of this release.
+BRANCH=1809 ## Branch number of the release. This should be present in the release notes of a particular release.
 git config --replace-all svn-remote.svn_$BRANCH.url svn://svn.chromium.org/chrome
 git config --replace-all svn-remote.svn_$BRANCH.fetch branches/$BRANCH/src:refs/remotes/origin/$BRANCH
 
