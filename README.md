@@ -97,6 +97,7 @@ Edit your .gclient and set:
   
 Note: When working with Ozone-Wayland Master, we need managed to be True but with Release branch it needs to be False.
 
+  ```
 cd ~git/chromium (Your top level directory).
 gclient sync --with_branch_heads
 
@@ -112,6 +113,7 @@ git config branch.branch_$BRANCH.remote branch-heads
 cd .. (cd to top level directory)
 gclient sync # Checkout all submodules at their branch DEPS revisions.
 ./src/ozone/patches/patch-chromium.sh // Apply Ozone-Wayland specific patches.
+  ```
 
 
 ## Gardening
