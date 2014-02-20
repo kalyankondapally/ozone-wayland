@@ -82,6 +82,37 @@ That's all. At this point you should be able to connect Chromium on Weston using
   $ ~/git/weston/src/weston &
   $ ./out/Debug/chrome --no-sandbox
   ```
+  
+  
+Working with Ozone-Wayland Release branch:
+
+These instructions assume Ozone-Wayland environment has already been setup.
+
+Edit your .gclient and set:
+
+
+  ```
+  "managed": False,
+  ```
+  
+Note: When working with Ozone-Wayland Master, we need managed to be True but with Release branch it needs to be False.
+
+cd ~git/chromium (Your top level directory).
+gclient sync --with_branch_heads
+
+cd src/
+BRANCH=1809 ## Branch number of this release.
+git config --replace-all svn-remote.svn_$BRANCH.url svn://svn.chromium.org/chrome
+git config --replace-all svn-remote.svn_$BRANCH.fetch branches/$BRANCH/src:refs/remotes/origin/$BRANCH
+
+git checkout -b branch_$BRANCH origin/$BRANCH # Checkout Release branch.
+git config branch.branch_$BRANCH.merge refs/heads/$BRANCH # Make git-cl happy.
+git config branch.branch_$BRANCH.remote branch-heads
+
+cd .. (cd to top level directory)
+gclient sync # Checkout all submodules at their branch DEPS revisions.
+./src/ozone/patches/patch-chromium.sh // Apply Ozone-Wayland specific patches.
+
 
 ## Gardening
 
