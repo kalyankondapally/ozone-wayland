@@ -84,7 +84,7 @@ That's all. At this point you should be able to connect Chromium on Weston using
   ```
   
   
-#Working with Ozone-Wayland Release branch:
+###Working with Ozone-Wayland Release branch:
 
 These instructions assume Ozone-Wayland environment has already been setup.
 
