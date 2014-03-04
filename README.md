@@ -110,7 +110,7 @@ git checkout -b branch_$BRANCH origin/$BRANCH # Checkout Release branch.
 git config branch.branch_$BRANCH.merge refs/heads/$BRANCH # Make git-cl happy.
 git config branch.branch_$BRANCH.remote branch-heads
 
-cd .. (cd to top level directory)temp directory
+cd .. (cd to top level directory)temp directoryadasda
 gclient sync # Checkout all submodules at their branch DEPS revisions.
 ./src/ozone/patches/patch-chromium.sh # Apply Ozone-Wayland specific patches.
   ```
