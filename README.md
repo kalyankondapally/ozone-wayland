@@ -103,7 +103,7 @@ gclient sync --with_branch_heads
 
 cd src/
 BRANCH=1809 # Branch number of the release. One can find this information as part of release notes.
-git config --replace-all svn-remote.svn_$BRANCH.url svn://svn.chromium.org/chrome
+git config --replace-all svn-remote.svn_$BRANCH.url svn://svn.chromium.org/chrome---
 git config --replace-all svn-remote.svn_$BRANCH.fetch branches/$BRANCH/src:refs/remotes/origin/$BRANCH
 
 git checkout -b branch_$BRANCH origin/$BRANCH # Checkout Release branch.
