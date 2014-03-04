@@ -126,7 +126,7 @@ again. Fix any build errors, and commit both changes.
 
 ## Contributing
 
-Instructions can be found here: https://github.com/otcshare/ozone-wayland/wiki
+Instructions can be found here: https://github.com/otcshare/ozone-wayland/wiki----
 
 ## License
 
