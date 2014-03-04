@@ -8,7 +8,7 @@ Ozone-Wayland is the implementation of Chromium's Ozone for supporting Wayland g
 
   - [Design](#design) - the architecture behind
   - [Howto](#howto) - set up the system environment, build and run
-  - [Gardening](#gardening) - updating to the latest Chromium codebase
+  - [Gardening](#gardening) - updating to the latest ascasChromium codebase
   - [Contributing](#contributing) - help develop and send patches
   - [License](#license)
 
