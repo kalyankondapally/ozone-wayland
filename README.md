@@ -21,7 +21,7 @@ http://www.chromium.org/developers/design-documents/ozone
 
 Before when using Aura on Linux, all the native windowing system code (X11) was spread throughout Chromium tree. Now the idea is that Ozone will abstract the native code and because it's a set of class factories, it will switch for whoever is the window system. The biggest advantage of this API is that it allows to implement the needed window system bits externally from the Chromium tree, which is great because it is where the loaded work situates.
 
-Worth to mention also that when Aura is used, there's no need for graphics toolkits, such as GTK+, EFL etc.
+Worth to mention also that when Aura is used, there's no need for graphics toolkits, such as GTK+, EFL
 
 ## Howto
 
