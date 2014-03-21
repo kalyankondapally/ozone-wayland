@@ -5,6 +5,10 @@
 
 {
   'variables': {
+    'variables':  {
+      'enable_experimental_vkb%': 0,
+    },
+    'enable_experimental_vkb%': '<(enable_experimental_vkb)',
     'conditions': [
       ['sysroot!=""', {
         'pkg-config': './pkg-config-wrapper "<(sysroot)" "<(target_arch)"',
@@ -50,6 +54,13 @@
       ],
       'include_dirs': [
         '../..',
+      ],
+      'conditions': [
+        ['<(enable_experimental_vkb)==1', {
+          'defines': [
+            'ENABLE_EXPERIMENTAL_VKB',
+          ],
+        }],
       ],
       'sources': [
         'display.cc',
