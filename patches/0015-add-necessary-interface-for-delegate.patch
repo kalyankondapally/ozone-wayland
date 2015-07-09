@@ -1,0 +1,35 @@
+From f06b74c6cf7c69b2778bf4588b330d8dedcb148c Mon Sep 17 00:00:00 2001
+From: Kalyan Kondapally <kalyan.kondapally@intel.com>
+Date: Wed, 8 Jul 2015 17:20:17 -0700
+Subject: [PATCH] add necessary interface for delegate
+
+---
+ ui/platform_window/platform_window_delegate.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/ui/platform_window/platform_window_delegate.h b/ui/platform_window/platform_window_delegate.h
+index 67c63a7..458edb2 100644
+--- a/ui/platform_window/platform_window_delegate.h
++++ b/ui/platform_window/platform_window_delegate.h
+@@ -47,6 +47,18 @@ class PlatformWindowDelegate {
+                                             float device_pixel_ratio) = 0;
+ 
+   virtual void OnActivationChanged(bool active) = 0;
++
++  virtual void OnDragEnter(float x,
++                           float y,
++                           uint32_t serial) = 0;
++
++   virtual void OnDragLeave() = 0;
++
++   virtual void OnDragDrop() = 0;
++
++   virtual void DragMotion(float x,
++                           float y,
++                           uint32_t time) = 0;
+ };
+ 
+ }  // namespace ui
+-- 
+1.9.1
+
